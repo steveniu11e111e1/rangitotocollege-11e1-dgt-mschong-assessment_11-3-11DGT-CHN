@@ -38,6 +38,7 @@ def move_player(event):
     # Move to te right
     elif event.keysym == "Right" and canvas.coords(player)[2] < 600:
         x = player_speed
+    canvas.move(player, x, 0)
 
 # Bind the keyboard
 root.bind("<Left>", move_player)
@@ -45,7 +46,7 @@ root.bind("<Right>", move_player)
 
 # create some bullets
 def fire_bullet():
-    bullet = canvas.create_rectangle(canvas.coords(player)[0] + 22, 350, canvas.coords(player)[2] - 22, fill="yellow")
+    bullet = canvas.create_rectangle(canvas.coords(player)[0] + 22, 350, canvas.coords(player)[2] - 22, 340, fill="yellow")
     bullets.append(bullet)
 
 # fire the bullets
@@ -84,14 +85,14 @@ def move_enemies():
             edge_reached = True
 
     if edge_reached:
-        enemy_directio *= -1
+        enemy_direction *= -1
         for enemy in enemies:
             canvas.move(enemy, 0, 20)
 
 def check_collisions():
     global score
     for bullet in bullets:
-        bullet_coords = canvas.coords(bullets)
+        bullet_coords = canvas.coords(bullet)
         for enemy in enemies:
             enemy_coords = canvas.coords(enemy)
 
@@ -121,5 +122,5 @@ def game_loop():
     root.after(50, game_loop)
 
 game_loop()
-root.mainloop
+root.mainloop()
 
