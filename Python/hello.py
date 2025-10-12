@@ -19,6 +19,7 @@ class Game1:
         self.bullet_speed = -15
         self.enemy_speed = 2
         self.enemy_direction = 1
+        self.game_started = False
 
         # list to hold bullets and enemies
         self.bullets = []
@@ -34,22 +35,46 @@ class Game1:
         # Score label
         self.score_label = Label(self.extrawindow, text=f"Score: {self.score}", font=("Helvetica", 14), bg="black", fg="white")
         self.score_label.pack()
-
-        # create the player
-        self.player = self.canvas.create_rectangle(275, 360, 325, 380, fill="blue")
+        
+        # Create start screen
+        self.create_start_screen()
 
         # Bind the keyboard
-        self.extrawindow.bind("<Left>", self.move_player)
-        self.extrawindow.bind("<Right>", self.move_player)
-        self.extrawindow.bind("<space>", lambda event: self.fire_bullet())
+        self.extrawindow.bind("<space>", lambda event: self.start_game())
 
-        # create our enemies
-        self.create_enemies()
+    def create_start_screen(self):
+        # Clear canvas of game
+        self.canvas.delete("all")
 
-        # Start game loop
-        self.game_loop()
+        #title 
+        self.canvas.create_text(300,150, text="space invaders", font="Helvetica", fill="white")
+        # start button/intructions 
+        self.canvas.create_text(300, 280, text="Press Space to Start", foot="Helvetica", fill="yellow")
+
+    def start_game(self, event=None):
+        if not self.game_started:
+            self.game_started = True
+            # Clear canvas of start screen
+            self.canvas.delete("all")
+
+            # create the player
+            self.player = self.canvas.create_rectangle(275, 360, 325, 380, fill="blue")
+
+            # Bind the keyboard
+            self.extrawindow.bind("<Left>", self.move_player)
+            self.extrawindow.bind("<Right>", self.move_player)
+            self.extrawindow.bind("<space>", lambda event: self.fire_bullet())
+
+            # create enemies
+            self.create_enemies()
+
+            # Start game loop
+            self.game_loop()
 
     def move_player(self, event):
+        # game intitaliation
+        if not self.game_started:
+            return
         x = 0
         # move to the left
         if event.keysym == "Left" and self.canvas.coords(self.player)[0] > 0:
@@ -61,6 +86,8 @@ class Game1:
 
     # create some bullets
     def fire_bullet(self):
+        if not self.game_started:
+            return
         bullet = self.canvas.create_rectangle(
             self.canvas.coords(self.player)[0] + 22,
             350,
@@ -123,6 +150,9 @@ class Game1:
 
     # game loop
     def game_loop(self):
+        if not self.game_started:
+            return
+        
         self.move_bullets()
         self.move_enemies()
         self.check_collisions()
@@ -136,10 +166,28 @@ class Game1:
         # check if all enemies are destroyed (win condition)
         if not self.enemies:
             self.canvas.create_text(300, 200, text="You Win!", fill="White", font=("Helvetica", 24))
+            self.game_started = False
             return
 
         # set game speed
         self.extrawindow.after(50, self.game_loop)
+def restart_game(self, event=None):
+
+    # Reset game state 
+    self.game_stared = False
+    self.bullets.clear = []
+    self.enemies.clear = []
+    self.score = 0
+    self.score_label.config(text=f"Score: {self.score}")
+
+    # clear canvas and show start screen
+    self.canvas.delete("all")
+    self.create_start_screen()
+
+    # Rebind space to start game
+    self.extrawindow.bind("<space>", lambda event: self.start_game())
+    #Unbidn restart key
+    self.extrawindow.unbind("r")
 
 
 class Game2:
@@ -150,11 +198,7 @@ class Game2:
             self.window = window
             
         # Game dimensions
-        self.WIDTH = 500
-        self.HEIGHT = 500
-        self.SPEED = 200
-        self.SPACE_SIZE = 20
-        self.BODY_SIZE = 2
+        self.WIDTH, self.HEIGHT, self.SPEED, self.SPACE_SIZE, self.BODY_SIZE= 500, 500, 200, 20, 2
         self.SNAKE = "#00FF00"
         self.FOOD = "#FFFFFF"
         self.BACKGROUND = "#000000"
@@ -267,6 +311,19 @@ class Game2:
                                font=('consolas', 70), 
                                text="GAME OVER", fill="red", 
                                tag="gameover")
+class Game3:
+    def __init__(self, window=None):
+        if window is None:
+            self.window = Tk()
+        else:
+            self.window = window
+            
+        self.window.title("Dinosaur Game")
+        self.window.geometry("600x200")
+        self.window.config(bg="white")
+        
+
+
 
 
 #assests of Snake Game
