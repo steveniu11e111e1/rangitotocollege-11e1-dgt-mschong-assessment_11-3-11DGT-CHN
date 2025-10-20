@@ -254,16 +254,16 @@ class Game2:
         self.HEIGHT = 500
         self.SPEED = 200
         self.SPACE_SIZE = 20
-        self.BODY_SIZE = 2 
+        self.BODY_SIZE = 3
         self.SNAKE = "#00FF00"
         self.FOOD = "#FF0000" 
         self.BACKGROUND = "#000000"
        
         self.score = 0
-        self.direction = 'left'
+        self.direction = 'right'
         self.game_started = False
         self.game_paused = False
-        self.game_over = False
+        self.game_ended = False  # Changed from game_over to avoid conflict
         self.snake = None
         self.food = None
        
@@ -330,7 +330,7 @@ class Game2:
             self.canvas.delete(self.continue_text)
 
     def toggle_pause(self, event=None):
-        if self.game_started and not self.game_over:
+        if self.game_started and not self.game_ended:
             self.game_paused = not self.game_paused
             if self.game_paused:
                 self.show_pause_screen()
@@ -342,48 +342,27 @@ class Game2:
         if not self.game_started:
             self.game_started = True
             self.game_paused = False
-            self.game_over = False
+            self.game_ended = False
             self.score = 0
             self.direction = 'right'
             self.window.unbind('<space>')
             self.canvas.delete("all")
             
-            # Initialize snake in the center
-            start_x = self.WIDTH // 2
-            start_y = self.HEIGHT // 2
+            # Initialize snake in the center - align to grid
+            start_x = (self.WIDTH // 2 // self.SPACE_SIZE) * self.SPACE_SIZE
+            start_y = (self.HEIGHT // 2 // self.SPACE_SIZE) * self.SPACE_SIZE
             
-            # Fixed: Create snake with correct number of arguments
-            self.snake = Snake(self.canvas, self.BODY_SIZE, self.SPACE_SIZE, self.SNAKE)
-            # Initialize snake at starting position
-            self.initialize_snake_position(start_x, start_y)
+            # Create snake using the proper Snake class
+            self.snake = self.Snake(self.canvas, self.BODY_SIZE, self.SPACE_SIZE, self.SNAKE, start_x, start_y)
             
-            self.food = Food(self.canvas, self.WIDTH, self.HEIGHT, self.SPACE_SIZE, self.FOOD)
+            # Create first food
+            self.food = self.Food(self.canvas, self.WIDTH, self.HEIGHT, self.SPACE_SIZE, self.FOOD)
             
             self.label.config(text=f"Points: {self.score}")
             self.next_turn()
 
-    def initialize_snake_position(self, start_x, start_y):
-        """Initialize snake coordinates at the starting position"""
-        if hasattr(self, 'snake') and self.snake:
-            # Clear existing snake
-            for square in self.snake.squares:
-                self.canvas.delete(square)
-            
-            # Initialize new coordinates
-            self.snake.coordinates = []
-            self.snake.squares = []
-            
-            for i in range(self.snake.body_size):
-                self.snake.coordinates.append([start_x - (i * self.SPACE_SIZE), start_y])
-
-            for x, y in self.snake.coordinates:
-                square = self.canvas.create_rectangle(
-                    x, y, x + self.SPACE_SIZE, y + self.SPACE_SIZE,
-                    fill=self.SNAKE, tags="snake")
-                self.snake.squares.append(square)
-
     def change_direction(self, new_direction):
-        if self.game_paused or not self.game_started or self.game_over:
+        if self.game_paused or not self.game_started or self.game_ended:
             return
             
         # Prevent 180-degree turns
@@ -394,48 +373,57 @@ class Game2:
             self.direction = new_direction
                
     def next_turn(self):
-        if self.game_paused or self.game_over or not self.game_started:
+        if self.game_paused or self.game_ended or not self.game_started:
             return
             
         if not hasattr(self, 'snake') or not self.snake.coordinates:
             return
             
-        x, y = self.snake.coordinates[0]
+        # Get current head position
+        head_x, head_y = self.snake.coordinates[0]
 
+        # Calculate new head position based on direction
         if self.direction == "up":
-            y -= self.SPACE_SIZE
+            new_head = (head_x, head_y - self.SPACE_SIZE)
         elif self.direction == "down":
-            y += self.SPACE_SIZE
+            new_head = (head_x, head_y + self.SPACE_SIZE)
         elif self.direction == "left":
-            x -= self.SPACE_SIZE
+            new_head = (head_x - self.SPACE_SIZE, head_y)
         elif self.direction == "right":
-            x += self.SPACE_SIZE
+            new_head = (head_x + self.SPACE_SIZE, head_y)
 
         # Insert new head position
-        self.snake.coordinates.insert(0, (x, y))
+        self.snake.coordinates.insert(0, new_head)
 
         # Create new head square
         square = self.canvas.create_rectangle(
-            x, y, x + self.SPACE_SIZE,
-            y + self.SPACE_SIZE, fill=self.SNAKE, tags="snake")
+            new_head[0], new_head[1], 
+            new_head[0] + self.SPACE_SIZE, 
+            new_head[1] + self.SPACE_SIZE, 
+            fill=self.SNAKE, tags="snake"
+        )
         self.snake.squares.insert(0, square)
 
         # Check for food collision
-        if x == self.food.coordinates[0] and y == self.food.coordinates[1]:
+        food_x, food_y = self.food.coordinates
+        head_x, head_y = new_head
+        
+        # Check if head overlaps with food (exact coordinate match)
+        if head_x == food_x and head_y == food_y:
             self.score += 1
             self.label.config(text=f"Points: {self.score}")
             self.canvas.delete("food")
-            self.food = Food(self.canvas, self.WIDTH, self.HEIGHT, self.SPACE_SIZE, self.FOOD)
+            self.food = self.Food(self.canvas, self.WIDTH, self.HEIGHT, self.SPACE_SIZE, self.FOOD)
+            # Snake grows when food is eaten, so don't remove tail
         else:
             # Remove tail if no food eaten
-            if len(self.snake.coordinates) > self.BODY_SIZE:
-                del self.snake.coordinates[-1]
-                self.canvas.delete(self.snake.squares[-1])
-                del self.snake.squares[-1]
+            del self.snake.coordinates[-1]
+            self.canvas.delete(self.snake.squares[-1])
+            del self.snake.squares[-1]
 
         # Check for collisions
         if self.check_collisions():
-            self.game_over()
+            self.show_game_over()
         else:
             self.window.after(self.SPEED, self.next_turn)
            
@@ -443,21 +431,21 @@ class Game2:
         if not hasattr(self, 'snake') or not self.snake.coordinates:
             return True
             
-        x, y = self.snake.coordinates[0]
+        head_x, head_y = self.snake.coordinates[0]
 
         # Wall collision
-        if x < 0 or x >= self.WIDTH or y < 0 or y >= self.HEIGHT:
+        if head_x < 0 or head_x >= self.WIDTH or head_y < 0 or head_y >= self.HEIGHT:
             return True
 
         # Self collision (check if head hits any body segment)
         for body_part in self.snake.coordinates[1:]:
-            if x == body_part[0] and y == body_part[1]:
+            if head_x == body_part[0] and head_y == body_part[1]:
                 return True
 
         return False
        
-    def game_over(self):
-        self.game_over = True
+    def show_game_over(self):  # Renamed from game_over to avoid conflict
+        self.game_ended = True
         self.canvas.delete("all")
         self.canvas.create_text(self.WIDTH/2, self.HEIGHT/2 - 40, 
                                font=('consolas', 40), text="GAME OVER", fill="red", tag="gameover")
@@ -471,339 +459,94 @@ class Game2:
         self.direction = 'right'
         self.game_started = False
         self.game_paused = False
-        self.game_over = False
+        self.game_ended = False
         self.snake = None
         self.food = None
         self.label.config(text=f"Points: {self.score}")
         self.canvas.delete("all")
         self.show_start_screen()
 
-
-# Fixed Snake and Food classes
-class Snake:
-    def __init__(self, canvas, body_size, space_size, color):
-        self.canvas = canvas
-        self.body_size = body_size
-        self.space_size = space_size
-        self.color = color
-        self.coordinates = []
-        self.squares = []
-        # Note: Coordinates will be initialized separately
-
-class Food:
-    def __init__(self, canvas, width, height, space_size, color):
-        self.canvas = canvas
-        self.space_size = space_size
-        
-        # Ensure food doesn't spawn on edges
-        x = random.randint(1, (width // space_size) - 2) * space_size
-        y = random.randint(1, (height // space_size) - 2) * space_size
-        
-        self.coordinates = [x, y]
-
-        canvas.create_oval(
-            x, y, x + space_size, y + space_size, 
-            fill=color, tags="food"
-        )
-
-
-
-class Game3:
-    def __init__(self, window=None):
-        if window is None:
-            self.window = Tk()
-        else:
-            self.window = window
+    # Fixed Snake and Food classes as inner classes
+    class Snake:
+        def __init__(self, canvas, body_size, space_size, color, start_x, start_y):
+            self.canvas = canvas
+            self.body_size = body_size
+            self.space_size = space_size
+            self.color = color
+            self.coordinates = []
+            self.squares = []
             
-        self.window.title("Dinosaur Run")
-        self.window.geometry("800x400")
-        
-        # Game variables
-        self.game_speed = 10
-        self.jump_height = 150
-        self.jump_speed = 15
-        self.score = 0
-        self.high_score = 0
-        self.is_jumping = False
-        self.is_crouching = False
-        self.game_started = False
-        self.game_paused = False
-        self.game_over = False
-        self.jump_count = 0
-        self.gravity = 8
-        
-        # Dinosaur dimensions
-        self.normal_height = 40
-        self.crouch_height = 20
-        self.dino_width = 40
-        
-        # Ground level
-        self.ground_y = 350
-        
-        # Create canvas
-        self.canvas = Canvas(self.window, width=800, height=400, bg="white")
-        self.canvas.pack()
-        
-        # Score display
-        self.score_display = self.canvas.create_text(700, 30, text=f"Score: {self.score}", font=("Arial", 16), fill="black")
-        self.high_score_display = self.canvas.create_text(700, 60, text=f"High Score: {self.high_score}", font=("Arial", 16), fill="black")
-        
-        self.setup_window()
-        self.show_start_screen()
-        
-    def setup_window(self):
-        self.window.bind("<space>", self.start_game)
-        self.window.bind("<Up>", self.jump)
-        self.window.bind("<Down>", self.crouch)
-        self.window.bind("<KeyRelease-Down>", self.stand_up)  # New binding for key release
-        self.window.bind("p", self.toggle_pause)
-        self.window.bind("<Escape>", self.toggle_pause)
-        self.window.bind("r", self.restart_game)
-        
-    def show_start_screen(self):
-        self.canvas.delete("all")
-        self.canvas.create_text(400, 100, text="DINOSAUR RUN", font=("Arial", 32, "bold"), fill="black")
-        self.canvas.create_text(400, 150, text="Infinite Runner Game", font=("Arial", 18), fill="gray")
-        
-        # Draw a simple dinosaur
-        self.draw_dinosaur(400, 250, 50)
-        
-        self.canvas.create_text(400, 320, text="CONTROLS:", font=("Arial", 16, "bold"), fill="black")
-        self.canvas.create_text(400, 340, text="UP ARROW: Jump", font=("Arial", 14), fill="darkgreen")
-        self.canvas.create_text(400, 360, text="DOWN ARROW: Crouch (Hold)", font=("Arial", 14), fill="darkgreen")
-        self.canvas.create_text(400, 380, text="P or ESC: Pause Game", font=("Arial", 14), fill="darkblue")
-        
-        self.canvas.create_text(400, 300, text="Press SPACE to Start", font=("Arial", 20, "bold"), fill="red")
-        
-    def draw_dinosaur(self, x, y, size):
-        # Draw a simple dinosaur character
-        body = self.canvas.create_rectangle(x-size//2, y-size//2, x+size//2, y+size//2, fill="green", outline="darkgreen")
-        head = self.canvas.create_rectangle(x+size//2, y-size//2, x+size, y-size//4, fill="green", outline="darkgreen")
-        eye = self.canvas.create_oval(x+size//1.5, y-size//2, x+size//1.2, y-size//1.5, fill="white")
-        pupil = self.canvas.create_oval(x+size//1.4, y-size//1.7, x+size//1.3, y-size//1.6, fill="black")
-        leg1 = self.canvas.create_rectangle(x-size//4, y+size//2, x, y+size, fill="green", outline="darkgreen")
-        leg2 = self.canvas.create_rectangle(x+size//4, y+size//2, x+size//2, y+size, fill="green", outline="darkgreen")
-        
-    def start_game(self, event=None):
-        if not self.game_started:
-            self.game_started = True
-            self.game_paused = False
-            self.score = 0
-            self.canvas.delete("all")
+            # Initialize snake body starting from start position
+            for i in range(body_size):
+                self.coordinates.append([start_x - (i * space_size), start_y])
+
+            # Create visual squares for the snake
+            for x, y in self.coordinates:
+                square = canvas.create_rectangle(
+                    x, y, x + space_size, y + space_size,
+                    fill=color, tags="snake")
+                self.squares.append(square)
+
+    class Food:
+        def __init__(self, canvas, width, height, space_size, color):
+            self.canvas = canvas
+            self.space_size = space_size
             
-            # Draw ground
-            self.ground = self.canvas.create_rectangle(0, self.ground_y, 800, 400, fill="gray", outline="gray")
+            # Ensure food spawns on grid and doesn't spawn on edges
+            max_x = (width // space_size) - 1
+            max_y = (height // space_size) - 1
             
-            # Draw dinosaur (normal size)
-            self.dino_x = 100
-            self.dino_y = self.ground_y
-            self.dino = self.canvas.create_rectangle(
-                self.dino_x - self.dino_width//2, 
-                self.dino_y - self.normal_height,
-                self.dino_x + self.dino_width//2, 
-                self.dino_y, 
-                fill="green", 
-                outline="darkgreen"
+            x = random.randint(1, max_x) * space_size
+            y = random.randint(1, max_y) * space_size
+            
+            self.coordinates = [x, y]
+
+            # Create food visual
+            canvas.create_oval(
+                x, y, x + space_size, y + space_size, 
+                fill=color, tags="food", outline="darkred"
             )
-            
-            # Initialize obstacles
-            self.obstacles = []
-            self.obstacle_speed = self.game_speed
-            
-            # Start game loop
-            self.update_score_display()
-            self.game_loop()
-            
-    def jump(self, event=None):
-        if not self.game_started or self.game_paused or self.game_over:
-            return
-            
-        if not self.is_jumping and not self.is_crouching:
-            self.is_jumping = True
-            self.jump_count = 0
-            
-    def crouch(self, event=None):
-        if not self.game_started or self.game_paused or self.game_over:
-            return
-            
-        if not self.is_jumping:  # Can't crouch while jumping
-            self.is_crouching = True
-            # Make dinosaur shorter when crouching
-            self.canvas.coords(self.dino, 
-                             self.dino_x - self.dino_width//2, 
-                             self.dino_y - self.crouch_height,
-                             self.dino_x + self.dino_width//2, 
-                             self.dino_y)
-            
-    def stand_up(self, event=None):
-        if self.is_crouching and not self.is_jumping:
-            self.is_crouching = False
-            # Restore normal dinosaur size
-            self.canvas.coords(self.dino, 
-                             self.dino_x - self.dino_width//2, 
-                             self.dino_y - self.normal_height,
-                             self.dino_x + self.dino_width//2, 
-                             self.dino_y)
-            
-    def toggle_pause(self, event=None):
-        if self.game_started and not self.game_over:
-            self.game_paused = not self.game_paused
-            if self.game_paused:
-                self.show_pause_screen()
-            else:
-                self.hide_pause_screen()
-                self.game_loop()
-                
-    def show_pause_screen(self):
-        self.pause_overlay = self.canvas.create_rectangle(200, 150, 600, 250, fill="white", outline="black", width=2)
-        self.pause_text = self.canvas.create_text(400, 200, text="GAME PAUSED", font=("Arial", 24, "bold"), fill="black")
-        
-    def hide_pause_screen(self):
-        if hasattr(self, 'pause_overlay'):
-            self.canvas.delete(self.pause_overlay)
-            self.canvas.delete(self.pause_text)
-            
-    def update_score_display(self):
-        self.canvas.itemconfig(self.score_display, text=f"Score: {self.score}")
-        self.canvas.itemconfig(self.high_score_display, text=f"High Score: {self.high_score}")
-        
-    def create_obstacle(self):
-        obstacle_types = [
-            {"width": 20, "height": 40, "y": self.ground_y - 40, "color": "red"},  # Cactus
-            {"width": 40, "height": 20, "y": self.ground_y - 20, "color": "brown"},  # Rock
-            {"width": 60, "height": 30, "y": self.ground_y - 30, "color": "darkred"}   # Big rock
-        ]
-        
-        obstacle_type = random.choice(obstacle_types)
-        obstacle = self.canvas.create_rectangle(
-            800, obstacle_type["y"] - obstacle_type["height"],
-            800 + obstacle_type["width"], obstacle_type["y"],
-            fill=obstacle_type["color"], outline="black"
-        )
-        
-        self.obstacles.append({
-            "id": obstacle,
-            "width": obstacle_type["width"],
-            "height": obstacle_type["height"],
-            "y": obstacle_type["y"]
-        })
-        
-    def move_obstacles(self):
-        for obstacle in self.obstacles[:]:
-            self.canvas.move(obstacle["id"], -self.obstacle_speed, 0)
-            
-            # Remove obstacles that are off screen
-            if self.canvas.coords(obstacle["id"])[2] < 0:
-                self.canvas.delete(obstacle["id"])
-                self.obstacles.remove(obstacle)
-                
-    def check_collisions(self):
-        dino_coords = self.canvas.coords(self.dino)
-        
-        for obstacle in self.obstacles:
-            obstacle_coords = self.canvas.coords(obstacle["id"])
-            
-            # Simple collision detection
-            if (dino_coords[2] > obstacle_coords[0] and  # Dino right edge > obstacle left edge
-                dino_coords[0] < obstacle_coords[2] and  # Dino left edge < obstacle right edge
-                dino_coords[1] < obstacle_coords[3] and  # Dino top < obstacle bottom
-                dino_coords[3] > obstacle_coords[1]):    # Dino bottom > obstacle top
-                return True
-                
-        return False
-        
-    def handle_jump(self):
-        if self.is_jumping:
-            if self.jump_count < self.jump_height // self.jump_speed:
-                self.canvas.move(self.dino, 0, -self.jump_speed)
-                self.jump_count += 1
-            else:
-                self.is_jumping = False
-        elif self.canvas.coords(self.dino)[3] < self.ground_y:
-            # Apply gravity
-            self.canvas.move(self.dino, 0, self.gravity)
-            
-    def game_loop(self):
-        if self.game_paused or self.game_over or not self.game_started:
-            return
-            
-        # Handle jumping
-        self.handle_jump()
-        
-        # Move obstacles
-        self.move_obstacles()
-        
-        # Create new obstacles randomly
-        if random.random() < 0.02 and len(self.obstacles) < 3:  # 2% chance each frame
-            self.create_obstacle()
-            
-        # Increase score
-        self.score += 1
-        if self.score > self.high_score:
-            self.high_score = self.score
-            
-        # Increase difficulty
-        if self.score % 500 == 0:
-            self.obstacle_speed += 1
-            
-        # Check collisions
-        if self.check_collisions():
-            self.game_over_screen()
-            return
-            
-        self.update_score_display()
-        self.window.after(30, self.game_loop)
-        
-    def game_over_screen(self):
-        self.game_over = True
-        # Make sure dinosaur is standing up when game ends
-        if self.is_crouching:
-            self.stand_up()
-            
-        self.canvas.create_rectangle(200, 150, 600, 300, fill="white", outline="red", width=3)
-        self.canvas.create_text(400, 180, text="GAME OVER", font=("Arial", 28, "bold"), fill="red")
-        self.canvas.create_text(400, 220, text=f"Final Score: {self.score}", font=("Arial", 20), fill="black")
-        self.canvas.create_text(400, 250, text=f"High Score: {self.high_score}", font=("Arial", 20), fill="black")
-        self.canvas.create_text(400, 280, text="Press R to Restart", font=("Arial", 16), fill="blue")
-        
-    def restart_game(self, event=None):
-        self.score = 0
-        self.game_started = False
-        self.game_paused = False
-        self.game_over = False
-        self.is_crouching = False  # Reset crouching state
-        self.is_jumping = False    # Reset jumping state
-        self.obstacle_speed = self.game_speed
-        self.obstacles = []
-        self.show_start_screen()
 
-# Assets of Snake Game
-class Snake:
-    def __init__(self, canvas, body_size, space_size, color):
-        self.canvas = canvas
-        self.body_size = body_size
-        self.coordinates = []
-        self.squares = []
+    # Fixed Snake and Food classes as inner classes
+    class Snake:
+        def __init__(self, canvas, body_size, space_size, color, start_x, start_y):
+            self.canvas = canvas
+            self.body_size = body_size
+            self.space_size = space_size
+            self.color = color
+            self.coordinates = []
+            self.squares = []
+            
+            # Initialize snake body starting from start position
+            for i in range(body_size):
+                self.coordinates.append([start_x - (i * space_size), start_y])
 
-        for i in range(0, body_size):
-            self.coordinates.append([0, 0])
+            # Create visual squares for the snake
+            for x, y in self.coordinates:
+                square = canvas.create_rectangle(
+                    x, y, x + space_size, y + space_size,
+                    fill=color, tags="snake")
+                self.squares.append(square)
 
-        for x, y in self.coordinates:
-            square = canvas.create_rectangle(
-                x, y, x + space_size, y + space_size,
-                fill=color, tag="snake")
-            self.squares.append(square)
+    class Food:
+        def __init__(self, canvas, width, height, space_size, color):
+            self.canvas = canvas
+            self.space_size = space_size
+            
+            # Ensure food spawns on grid and doesn't spawn on edges
+            max_x = (width // space_size) - 1
+            max_y = (height // space_size) - 1
+            
+            x = random.randint(1, max_x) * space_size
+            y = random.randint(1, max_y) * space_size
+            
+            self.coordinates = [x, y]
 
-
-class Food:
-    def __init__(self, canvas, width, height, space_size, color):
-        self.canvas = canvas
-        x = random.randint(0, (width // space_size)-1) * space_size
-        y = random.randint(0, (height // space_size) - 1) * space_size
-        self.coordinates = [x, y]
-
-        canvas.create_oval(x, y, x + space_size, y + space_size, fill=color, tag="food")
-
+            # Create food visual
+            canvas.create_oval(
+                x, y, x + space_size, y + space_size, 
+                fill=color, tags="food", outline="darkred"
+            )
 
 class GameLauncher:
     def __init__(self):
