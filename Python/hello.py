@@ -254,16 +254,18 @@ class Game2:
         self.HEIGHT = 500
         self.SPEED = 200
         self.SPACE_SIZE = 20
-        self.BODY_SIZE = 2
+        self.BODY_SIZE = 2 
         self.SNAKE = "#00FF00"
-        self.FOOD = "#FFFFFF"
+        self.FOOD = "#FF0000" 
         self.BACKGROUND = "#000000"
        
         self.score = 0
-        self.direction = 'down'
+        self.direction = 'left'
         self.game_started = False
         self.game_paused = False
         self.game_over = False
+        self.snake = None
+        self.food = None
        
         self.setup_window()
         self.create_widgets()
@@ -271,13 +273,14 @@ class Game2:
        
     def setup_window(self):
         self.window.title("Snake Game")
-        self.window.bind('<Left>', self.change_direction)
-        self.window.bind('<Right>', self.change_direction)
-        self.window.bind('<Up>', self.change_direction)
-        self.window.bind('<Down>', self.change_direction)
+        self.window.bind('<Left>', lambda e: self.change_direction('left'))
+        self.window.bind('<Right>', lambda e: self.change_direction('right'))
+        self.window.bind('<Up>', lambda e: self.change_direction('up'))
+        self.window.bind('<Down>', lambda e: self.change_direction('down'))
         self.window.bind('p', self.toggle_pause)
         self.window.bind('<Escape>', self.toggle_pause)
         self.window.bind('r', self.restart_game)
+        self.window.bind('<space>', self.start_game)
        
     def create_widgets(self):
         # Score label
@@ -339,31 +342,62 @@ class Game2:
         if not self.game_started:
             self.game_started = True
             self.game_paused = False
+            self.game_over = False
+            self.score = 0
+            self.direction = 'right'
             self.window.unbind('<space>')
             self.canvas.delete("all")
+            
+            # Initialize snake in the center
+            start_x = self.WIDTH // 2
+            start_y = self.HEIGHT // 2
+            
+            # Fixed: Create snake with correct number of arguments
             self.snake = Snake(self.canvas, self.BODY_SIZE, self.SPACE_SIZE, self.SNAKE)
+            # Initialize snake at starting position
+            self.initialize_snake_position(start_x, start_y)
+            
             self.food = Food(self.canvas, self.WIDTH, self.HEIGHT, self.SPACE_SIZE, self.FOOD)
+            
+            self.label.config(text=f"Points: {self.score}")
             self.next_turn()
+
+    def initialize_snake_position(self, start_x, start_y):
+        """Initialize snake coordinates at the starting position"""
+        if hasattr(self, 'snake') and self.snake:
+            # Clear existing snake
+            for square in self.snake.squares:
+                self.canvas.delete(square)
+            
+            # Initialize new coordinates
+            self.snake.coordinates = []
+            self.snake.squares = []
+            
+            for i in range(self.snake.body_size):
+                self.snake.coordinates.append([start_x - (i * self.SPACE_SIZE), start_y])
+
+            for x, y in self.snake.coordinates:
+                square = self.canvas.create_rectangle(
+                    x, y, x + self.SPACE_SIZE, y + self.SPACE_SIZE,
+                    fill=self.SNAKE, tags="snake")
+                self.snake.squares.append(square)
 
     def change_direction(self, new_direction):
         if self.game_paused or not self.game_started or self.game_over:
             return
             
-        if new_direction == 'left':
-            if self.direction != 'right':
-                self.direction = new_direction
-        elif new_direction == 'right':
-            if self.direction != 'left':
-                self.direction = new_direction
-        elif new_direction == 'up':
-            if self.direction != 'down':
-                self.direction = new_direction
-        elif new_direction == 'down':
-            if self.direction != 'up':
-                self.direction = new_direction
+        # Prevent 180-degree turns
+        if (new_direction == 'left' and self.direction != 'right') or \
+           (new_direction == 'right' and self.direction != 'left') or \
+           (new_direction == 'up' and self.direction != 'down') or \
+           (new_direction == 'down' and self.direction != 'up'):
+            self.direction = new_direction
                
     def next_turn(self):
         if self.game_paused or self.game_over or not self.game_started:
+            return
+            
+        if not hasattr(self, 'snake') or not self.snake.coordinates:
             return
             
         x, y = self.snake.coordinates[0]
@@ -377,37 +411,45 @@ class Game2:
         elif self.direction == "right":
             x += self.SPACE_SIZE
 
+        # Insert new head position
         self.snake.coordinates.insert(0, (x, y))
 
+        # Create new head square
         square = self.canvas.create_rectangle(
             x, y, x + self.SPACE_SIZE,
-            y + self.SPACE_SIZE, fill=self.SNAKE)
-
+            y + self.SPACE_SIZE, fill=self.SNAKE, tags="snake")
         self.snake.squares.insert(0, square)
 
+        # Check for food collision
         if x == self.food.coordinates[0] and y == self.food.coordinates[1]:
             self.score += 1
             self.label.config(text=f"Points: {self.score}")
             self.canvas.delete("food")
             self.food = Food(self.canvas, self.WIDTH, self.HEIGHT, self.SPACE_SIZE, self.FOOD)
         else:
-            del self.snake.coordinates[-1]
-            self.canvas.delete(self.snake.squares[-1])
-            del self.snake.squares[-1]
+            # Remove tail if no food eaten
+            if len(self.snake.coordinates) > self.BODY_SIZE:
+                del self.snake.coordinates[-1]
+                self.canvas.delete(self.snake.squares[-1])
+                del self.snake.squares[-1]
 
+        # Check for collisions
         if self.check_collisions():
             self.game_over()
         else:
             self.window.after(self.SPEED, self.next_turn)
            
     def check_collisions(self):
+        if not hasattr(self, 'snake') or not self.snake.coordinates:
+            return True
+            
         x, y = self.snake.coordinates[0]
 
-        if x < 0 or x >= self.WIDTH:
-            return True
-        elif y < 0 or y >= self.HEIGHT:
+        # Wall collision
+        if x < 0 or x >= self.WIDTH or y < 0 or y >= self.HEIGHT:
             return True
 
+        # Self collision (check if head hits any body segment)
         for body_part in self.snake.coordinates[1:]:
             if x == body_part[0] and y == body_part[1]:
                 return True
@@ -416,22 +458,54 @@ class Game2:
        
     def game_over(self):
         self.game_over = True
-        self.canvas.delete(ALL)
-        self.canvas.create_text(self.WIDTH/2, self.HEIGHT/2 - 20, 
-                               font=('consolas', 70), text="GAME OVER", fill="red", tag="gameover")
-        self.canvas.create_text(self.WIDTH/2, self.HEIGHT/2 + 40, 
+        self.canvas.delete("all")
+        self.canvas.create_text(self.WIDTH/2, self.HEIGHT/2 - 40, 
+                               font=('consolas', 40), text="GAME OVER", fill="red", tag="gameover")
+        self.canvas.create_text(self.WIDTH/2, self.HEIGHT/2 + 20, 
                                font=('consolas', 20), text=f"Score: {self.score}", fill="white")
-        self.canvas.create_text(self.WIDTH/2, self.HEIGHT/2 + 80, 
+        self.canvas.create_text(self.WIDTH/2, self.HEIGHT/2 + 60, 
                                font=('consolas', 14), text="Press R to Restart", fill="yellow")
 
     def restart_game(self, event=None):
         self.score = 0
-        self.direction = 'down'
+        self.direction = 'right'
         self.game_started = False
         self.game_paused = False
         self.game_over = False
+        self.snake = None
+        self.food = None
         self.label.config(text=f"Points: {self.score}")
+        self.canvas.delete("all")
         self.show_start_screen()
+
+
+# Fixed Snake and Food classes
+class Snake:
+    def __init__(self, canvas, body_size, space_size, color):
+        self.canvas = canvas
+        self.body_size = body_size
+        self.space_size = space_size
+        self.color = color
+        self.coordinates = []
+        self.squares = []
+        # Note: Coordinates will be initialized separately
+
+class Food:
+    def __init__(self, canvas, width, height, space_size, color):
+        self.canvas = canvas
+        self.space_size = space_size
+        
+        # Ensure food doesn't spawn on edges
+        x = random.randint(1, (width // space_size) - 2) * space_size
+        y = random.randint(1, (height // space_size) - 2) * space_size
+        
+        self.coordinates = [x, y]
+
+        canvas.create_oval(
+            x, y, x + space_size, y + space_size, 
+            fill=color, tags="food"
+        )
+
 
 
 class Game3:
