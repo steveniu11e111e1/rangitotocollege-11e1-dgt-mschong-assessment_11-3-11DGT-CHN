@@ -18,53 +18,53 @@ message box: are used to inform users of there error of interaction.
 
 from tkinter import *
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 import random
-import time
+import sys
 import tkinter.messagebox
-
 class Game1:
-    def __init__(self, window=None):
-        if window is None:
-            self.extrawindow = Tk()
-        else:
-            self.extrawindow = window
-           
-        self.extrawindow.title("Space Invaders!")
-        self.extrawindow.geometry("600x450")
-        self.extrawindow.config(bg="black")
+    def __init__(self, window):
+        """Initialize the Space Invaders game window."""
+        try:
+            self.window = window
+            self.window.title("Space Invaders!")
+            self.window.geometry("600x450")
+            self.window.config(bg="black")
 
-        # Game variables
-        self.player_speed = 10
-        self.bullet_speed = -15
-        self.enemy_speed = 2
-        self.enemy_direction = 1
-        self.game_started = False
-        self.game_paused = False
-        self.timeDelayVar = None
+            self.player_speed = 10
+            self.bullet_speed = -15
+            self.enemy_speed = 2
+            self.enemy_direction = 1
+            self.game_started = False
+            self.game_paused = False
+            self.timeDelayVar = None
 
-        # list to hold bullets and enemies
-        self.bullets = []
-        self.enemies = []
+            # list to hold bullets and enemies
+            self.bullets = []
+            self.enemies = []
 
-        # Track score
-        self.score = 0
+            # Track score
+            self.score = 0
 
-        # create player canvas
-        self.canvas = Canvas(self.extrawindow, width=600, height=400, bg="black", highlightthickness=0)
-        self.canvas.pack()
+            # create player canvas
+            self.canvas = Canvas(self.window, width=600, height=400, bg="black", highlightthickness=0)
+            self.canvas.pack()
 
-        # Score label
-        self.score_label = Label(self.extrawindow, text=f"Score: {self.score}", font=("Helvetica", 14), bg="black", fg="white")
-        self.score_label.pack()
+            # Score label
+            self.score_label = Label(self.window, text=f"Score: {self.score}", font=("Helvetica", 14), bg="black", fg="white")
+            self.score_label.pack()
 
-        # Create start screen
-        self.create_start_screen()
-       
-        # Bind the keyboard
-        self.extrawindow.bind("<space>", self.start_game)
-        self.extrawindow.bind("<Escape>", self.toggle_pause)
-        self.extrawindow.bind("p", self.toggle_pause)
+            # Create start screen
+            self.create_start_screen()
+            
+            # Bind the keyboard
+            self.window.bind("<space>", self.start_game)
+            self.window.bind("<Escape>", self.toggle_pause)
+            self.window.bind("p", self.toggle_pause)
+
+        except Exception as e:
+            messagebox.showerror("Error",
+                                 f"space Invaders init failed: {str(e)}")
 
     def create_start_screen(self):
         # Clear canvas
@@ -116,9 +116,9 @@ class Game1:
             self.player = self.canvas.create_rectangle(275, 360, 325, 380, fill="blue")
 
             # Bind the keyboard
-            self.extrawindow.bind("<Left>", self.move_player)
-            self.extrawindow.bind("<Right>", self.move_player)
-            self.extrawindow.bind("<space>", lambda event: self.fire_bullet())
+            self.window.bind("<Left>", self.move_player)
+            self.window.bind("<Right>", self.move_player)
+            self.window.bind("<space>", lambda event: self.fire_bullet())
 
             # create our enemies
             self.create_enemies()
@@ -187,22 +187,25 @@ class Game1:
                 self.canvas.move(enemy, 0, 20)
 
     def check_collisions(self):
-        for bullet in self.bullets[:]:
-            bullet_coords = self.canvas.coords(bullet)
-            for enemy in self.enemies[:]:
-                enemy_coords = self.canvas.coords(enemy)
+        try:
+            for bullet in self.bullets[:]:
+                bullet_coords = self.canvas.coords(bullet)
+                for enemy in self.enemies[:]:
+                    enemy_coords = self.canvas.coords(enemy)
 
-                if (bullet_coords[2] > enemy_coords[0] and bullet_coords[0] < enemy_coords[2] and
-                    bullet_coords[3] > enemy_coords[1] and bullet_coords[1] < enemy_coords[3]):
-                    self.canvas.delete(bullet)
-                    self.canvas.delete(enemy)
-                    if bullet in self.bullets:
-                        self.bullets.remove(bullet)
-                    if enemy in self.enemies:
-                        self.enemies.remove(enemy)
-                    self.score += 10
-                    self.score_label.config(text=f"Score: {self.score}")
-                    break
+                    if (bullet_coords[2] > enemy_coords[0] and bullet_coords[0] < enemy_coords[2] and
+                        bullet_coords[3] > enemy_coords[1] and bullet_coords[1] < enemy_coords[3]):
+                        self.canvas.delete(bullet)
+                        self.canvas.delete(enemy)
+                        if bullet in self.bullets:
+                            self.bullets.remove(bullet)
+                        if enemy in self.enemies:
+                            self.enemies.remove(enemy)
+                        self.score += 10
+                        self.score_label.config(text=f"Score: {self.score}")
+                        break
+        except Exception as e:
+            print("Collision error: {e}")
 
     def game_over_screen(self):
         self.game_over = True
@@ -210,7 +213,7 @@ class Game1:
         self.canvas.create_text(300, 180, text="GAME OVER", fill="red", font=("Helvetica", 24, "bold"))
         self.canvas.create_text(300, 220, text=f"Final Score: {self.score}", fill="white", font=("Helvetica", 14))
         self.canvas.create_text(300, 350, text="Press R to Restart or ESC to Quit", fill="yellow", font=("Helvetica", 12))
-        self.extrawindow.bind("r", self.restart_game)
+        self.window.bind("r", self.restart_game)
 
     def win_screen(self):
         self.game_over = True
@@ -218,7 +221,8 @@ class Game1:
         self.canvas.create_text(300, 180, text="YOU WIN!", fill="green", font=("Helvetica", 24, "bold"))
         self.canvas.create_text(300, 220, text=f"Final Score: {self.score}", fill="white", font=("Helvetica", 14))
         self.canvas.create_text(300, 350, text="Press R to Restart or ESC to Quit", fill="yellow", font=("Helvetica", 12))
-        self.extrawindow.bind("r", self.restart_game)
+        self.window.bind("r", self.restart_game)
+
 
     def restart_game(self, event=None):
         # Reset game state
@@ -231,7 +235,7 @@ class Game1:
         self.score_label.config(text=f"Score: {self.score}")
         
         # Unbind restart key
-        self.extrawindow.unbind("r")
+        self.window.unbind("r")
         
         # Show start screen
         self.create_start_screen()
@@ -257,39 +261,48 @@ class Game1:
             return
 
         # set game speed
-        self.extrawindow.after(50, self.game_loop)
+        self.window.after(50, self.game_loop)
 
 
 class Game2:
+    """Control a snake to eat food and grow without hitting walls or yourself."""
     def __init__(self, window=None):
-        if window is None:
-            self.window = Tk()
-        else:
-            self.window = window
-           
-        # Game dimensions
-        self.WIDTH = 500
-        self.HEIGHT = 500
-        self.SPEED = 200
-        self.SPACE_SIZE = 20
-        self.BODY_SIZE = 3
-        self.SNAKE = "#00FF00"
-        self.FOOD = "#FF0000" 
-        self.BACKGROUND = "#000000"
-       
-        self.score = 0
-        self.direction = 'right'
-        self.game_started = False
-        self.game_paused = False
-        self.game_ended = False  # Changed from game_over to avoid conflict
-        self.snake = None
-        self.food = None
-       
-        self.setup_window()
-        self.create_widgets()
-        self.show_start_screen()
-       
+        """Initialize the Snake Game window."""
+        try:
+            if window is None:
+                self.window = Tk()
+            else:
+                self.window = window
+               
+
+            # Game dimensions
+            self.WIDTH = 500
+            self.HEIGHT = 500
+            self.SPEED = 200
+            self.SPACE_SIZE = 20
+            self.BODY_SIZE = 3
+            self.SNAKE = "#00FF00"
+            self.FOOD = "#FF0000" 
+            self.BACKGROUND = "#000000"
+        
+            self.score = 0
+            self.direction = 'right'
+            self.game_started = False
+            self.game_paused = False
+            self.game_ended = False  # Changed from game_over to avoid conflict
+            self.snake = None
+            self.food = None
+        
+            self.setup_window()
+            self.create_widgets()
+            self.show_start_screen()
+        except Exception as e:
+            tkinter.messagebox.showerror("Initialization Error", f"Failed to initialize Snake Game: {str(e)}")
+            if hasattr(self, 'window'):
+                self.window.destroy()
+
     def setup_window(self):
+        """Set game dimensions and initial state."""
         self.window.title("Snake Game")
         self.window.bind('<Left>', lambda e: self.change_direction('left'))
         self.window.bind('<Right>', lambda e: self.change_direction('right'))
@@ -301,6 +314,7 @@ class Game2:
         self.window.bind('<space>', self.start_game)
        
     def create_widgets(self):
+        """Create score display and game canvas."""
         # Score label
         self.label = Label(self.window, text=f"Points: {self.score}", font=('consolas', 20))
         self.label.pack()
@@ -357,94 +371,104 @@ class Game2:
                 self.next_turn()
 
     def start_game(self, event=None):
-        if not self.game_started:
-            self.game_started = True
-            self.game_paused = False
-            self.game_ended = False
-            self.score = 0
-            self.direction = 'right'
-            self.window.unbind('<space>')
-            self.canvas.delete("all")
+        try:
+            if not self.game_started:
+                self.game_started = True
+                self.game_paused = False
+                self.game_ended = False
+                self.score = 0
+                self.direction = 'right'
+                self.window.unbind('<space>')
+                self.canvas.delete("all")
             
-            # Initialize snake in the center - align to grid
-            start_x = (self.WIDTH // 2 // self.SPACE_SIZE) * self.SPACE_SIZE
-            start_y = (self.HEIGHT // 2 // self.SPACE_SIZE) * self.SPACE_SIZE
+                # Initialize snake in the center - align to grid
+                start_x = (self.WIDTH // 2 // self.SPACE_SIZE) * self.SPACE_SIZE
+                start_y = (self.HEIGHT // 2 // self.SPACE_SIZE) * self.SPACE_SIZE
             
-            # Create snake using the proper Snake class
-            self.snake = self.Snake(self.canvas, self.BODY_SIZE, self.SPACE_SIZE, self.SNAKE, start_x, start_y)
+                # Create snake using the proper Snake class
+                self.snake = self.Snake(self.canvas, self.BODY_SIZE, self.SPACE_SIZE, self.SNAKE, start_x, start_y)
             
-            # Create first food
-            self.food = self.Food(self.canvas, self.WIDTH, self.HEIGHT, self.SPACE_SIZE, self.FOOD)
+                # Create first food
+                self.food = self.Food(self.canvas, self.WIDTH, self.HEIGHT, self.SPACE_SIZE, self.FOOD)
             
-            self.label.config(text=f"Points: {self.score}")
-            self.next_turn()
+                self.label.config(text=f"Points: {self.score}")
+                self.next_turn()
+        except Exception as e:
+            messagebox.showerror("Error", f"Game start failed: {str(e)}")
 
     def change_direction(self, new_direction):
-        if self.game_paused or not self.game_started or self.game_ended:
-            return
-            
-        # Prevent 180-degree turns
-        if (new_direction == 'left' and self.direction != 'right') or \
-           (new_direction == 'right' and self.direction != 'left') or \
-           (new_direction == 'up' and self.direction != 'down') or \
-           (new_direction == 'down' and self.direction != 'up'):
-            self.direction = new_direction
+        try:
+            if self.game_paused or not self.game_started or self.game_ended:
+                return
+                
+            # Prevent 180-degree turns
+            if (new_direction == 'left' and self.direction != 'right') or \
+                (new_direction == 'right' and self.direction != 'left') or \
+                (new_direction == 'up' and self.direction != 'down') or \
+                (new_direction == 'down' and self.direction != 'up'):
+                self.direction = new_direction
+        except Exception as e:
+            print(f"Direction change error: {e}")
                
     def next_turn(self):
-        if self.game_paused or self.game_ended or not self.game_started:
-            return
+        try:
+            if self.game_paused or self.game_ended or not self.game_started:
+                return
+                
+            if not hasattr(self, 'snake') or not self.snake.coordinates:
+                return
+                
+            # Get current head position
+            head_x, head_y = self.snake.coordinates[0]
+
+            # Calculate new head position based on direction
+            if self.direction == "up":
+                new_head = (head_x, head_y - self.SPACE_SIZE)
+            elif self.direction == "down":
+                new_head = (head_x, head_y + self.SPACE_SIZE)
+            elif self.direction == "left":
+                new_head = (head_x - self.SPACE_SIZE, head_y)
+            elif self.direction == "right":
+                new_head = (head_x + self.SPACE_SIZE, head_y)
+
+            # Insert new head position
+            self.snake.coordinates.insert(0, new_head)
+
+            # Create new head square
+            square = self.canvas.create_rectangle(
+                new_head[0], new_head[1], 
+                new_head[0] + self.SPACE_SIZE, 
+                new_head[1] + self.SPACE_SIZE, 
+                fill=self.SNAKE, tags="snake"
+            )
+            self.snake.squares.insert(0, square)
+
+            # Check for food collision
+            food_x, food_y = self.food.coordinates
+            head_x, head_y = new_head
             
-        if not hasattr(self, 'snake') or not self.snake.coordinates:
-            return
+            # Check if head overlaps with food (exact coordinate match)
+            if head_x == food_x and head_y == food_y:
+                self.score += 1
+                self.label.config(text=f"Points: {self.score}")
+                self.canvas.delete("food")
+                self.food = self.Food(self.canvas, self.WIDTH, self.HEIGHT, self.SPACE_SIZE, self.FOOD)
+                # Snake grows when food is eaten, so don't remove tail
+            else:
+                # Remove tail if no food eaten
+                del self.snake.coordinates[-1]
+                self.canvas.delete(self.snake.squares[-1])
+                del self.snake.squares[-1]
+
+            # Check for collisions
+            if self.check_collisions():
+                self.show_game_over()
+            else:
+                self.window.after(self.SPEED, self.next_turn)
+        except Exception as e:
+            tkinter.messagebox.showerror("Game Loop Error", f"Game loop failed: {str(e)}")
+     
             
-        # Get current head position
-        head_x, head_y = self.snake.coordinates[0]
-
-        # Calculate new head position based on direction
-        if self.direction == "up":
-            new_head = (head_x, head_y - self.SPACE_SIZE)
-        elif self.direction == "down":
-            new_head = (head_x, head_y + self.SPACE_SIZE)
-        elif self.direction == "left":
-            new_head = (head_x - self.SPACE_SIZE, head_y)
-        elif self.direction == "right":
-            new_head = (head_x + self.SPACE_SIZE, head_y)
-
-        # Insert new head position
-        self.snake.coordinates.insert(0, new_head)
-
-        # Create new head square
-        square = self.canvas.create_rectangle(
-            new_head[0], new_head[1], 
-            new_head[0] + self.SPACE_SIZE, 
-            new_head[1] + self.SPACE_SIZE, 
-            fill=self.SNAKE, tags="snake"
-        )
-        self.snake.squares.insert(0, square)
-
-        # Check for food collision
-        food_x, food_y = self.food.coordinates
-        head_x, head_y = new_head
-        
-        # Check if head overlaps with food (exact coordinate match)
-        if head_x == food_x and head_y == food_y:
-            self.score += 1
-            self.label.config(text=f"Points: {self.score}")
-            self.canvas.delete("food")
-            self.food = self.Food(self.canvas, self.WIDTH, self.HEIGHT, self.SPACE_SIZE, self.FOOD)
-            # Snake grows when food is eaten, so don't remove tail
-        else:
-            # Remove tail if no food eaten
-            del self.snake.coordinates[-1]
-            self.canvas.delete(self.snake.squares[-1])
-            del self.snake.squares[-1]
-
-        # Check for collisions
-        if self.check_collisions():
-            self.show_game_over()
-        else:
-            self.window.after(self.SPEED, self.next_turn)
-           
     def check_collisions(self):
         if not hasattr(self, 'snake') or not self.snake.coordinates:
             return True
@@ -506,67 +530,72 @@ class Game2:
                 self.squares.append(square)
 
     class Food:
-        def __init__(self, canvas, width, height, space_size, color):
-            self.canvas = canvas
-            self.space_size = space_size
-            
-            # Ensure food spawns on grid and doesn't spawn on edges
-            max_x = (width // space_size) - 1
-            max_y = (height // space_size) - 1
-            
-            x = random.randint(1, max_x) * space_size
-            y = random.randint(1, max_y) * space_size
-            
-            self.coordinates = [x, y]
+        try:
+            def __init__(self, canvas, width, height, space_size, color):
+                self.canvas = canvas
+                self.space_size = space_size
+                
+                # Ensure food spawns on grid and doesn't spawn on edges
+                max_x = (width // space_size) - 1
+                max_y = (height // space_size) - 1
+                
+                x = random.randint(1, max_x) * space_size
+                y = random.randint(1, max_y) * space_size
+                
+                self.coordinates = [x, y]
 
-            # Create food visual
-            canvas.create_oval(
-                x, y, x + space_size, y + space_size, 
-                fill=color, tags="food", outline="darkred"
-            )
+                # Create food visual
+                canvas.create_oval(
+                    x, y, x + space_size, y + space_size, 
+                    fill=color, tags="food", outline="darkred"
+                )
+        except Exception as e:
+                raise Exception(f"Failed to create food: {str(e)}")
 
 class Game3:
-    def __init__(self, window=None):
-        if window is None:
+    def __init__(self, window):
+        try:
             self.window = Tk()
-        else:
             self.window = window
             
-        self.window.title("Dinosaur Run")
-        self.window.geometry("800x400")
-        
-        # Game variables
-        self.game_speed = 10
-        self.jump_height = 150
-        self.jump_speed = 15
-        self.score = 0
-        self.high_score = 0
-        self.is_jumping = False
-        self.is_crouching = False
-        self.game_started = False
-        self.game_paused = False
-        self.game_over = False
-        self.jump_count = 0
-        self.gravity = 8
-        
-        # Dinosaur dimensions
-        self.normal_height = 40
-        self.crouch_height = 20
-        self.dino_width = 40
-        
-        # Ground level
-        self.ground_y = 350
-        
-        # Create canvas
-        self.canvas = Canvas(self.window, width=800, height=400, bg="white")
-        self.canvas.pack()
-        
-        # Score display
-        self.score_display = self.canvas.create_text(700, 30, text=f"Score: {self.score}", font=("Arial", 16), fill="black")
-        self.high_score_display = self.canvas.create_text(700, 60, text=f"High Score: {self.high_score}", font=("Arial", 16), fill="black")
-        
-        self.setup_window()
-        self.show_start_screen()
+            self.window.title("Dinosaur Run")
+            self.window.geometry("800x400")
+            
+            # Game variables
+            self.game_speed = 10
+            self.jump_height = 150
+            self.jump_speed = 15
+            self.score = 0
+            self.high_score = 0
+            self.is_jumping = False
+            self.is_crouching = False
+            self.game_started = False
+            self.game_paused = False
+            self.game_over = False
+            self.jump_count = 0
+            self.gravity = 8
+            
+            # Dinosaur dimensions
+            self.normal_height = 40
+            self.crouch_height = 20
+            self.dino_width = 40
+            
+            # Ground level
+            self.ground_y = 350
+            
+            # Create canvas
+            self.canvas = Canvas(self.window, width=800, height=400, bg="white")
+            self.canvas.pack()
+            
+            # Score display
+            self.score_display = self.canvas.create_text(700, 30, text=f"Score: {self.score}", font=("Arial", 16), fill="black")
+            self.high_score_display = self.canvas.create_text(700, 60, text=f"High Score: {self.high_score}", font=("Arial", 16), fill="black")
+            
+            self.setup_window()
+            self.show_start_screen()
+        except Exception as e:
+            messagebox.showerror("Error", f"Dinosaur Run init failed: {str(e)}")
+
         
     def setup_window(self):
         self.window.bind("<space>", self.start_game)
@@ -602,35 +631,37 @@ class Game3:
         leg2 = self.canvas.create_rectangle(x+size//4, y+size//2, x+size//2, y+size, fill="green", outline="darkgreen")
         
     def start_game(self, event=None):
-        if not self.game_started:
-            self.game_started = True
-            self.game_paused = False
-            self.score = 0
-            self.canvas.delete("all")
-            
-            # Draw ground
-            self.ground = self.canvas.create_rectangle(0, self.ground_y, 800, 400, fill="gray", outline="gray")
-            
-            # Draw dinosaur (normal size)
-            self.dino_x = 100
-            self.dino_y = self.ground_y
-            self.dino = self.canvas.create_rectangle(
-                self.dino_x - self.dino_width//2, 
-                self.dino_y - self.normal_height,
-                self.dino_x + self.dino_width//2, 
-                self.dino_y, 
-                fill="green", 
-                outline="darkgreen"
-            )
-            
-            # Initialize obstacles
-            self.obstacles = []
-            self.obstacle_speed = self.game_speed
-            
-            # Start game loop
-            self.update_score_display()
-            self.game_loop()
-            
+        try:
+            if not self.game_started:
+                self.game_started = True
+                self.game_paused = False
+                self.score = 0
+                self.canvas.delete("all")
+                
+                # Draw ground
+                self.ground = self.canvas.create_rectangle(0, self.ground_y, 800, 400, fill="gray", outline="gray")
+                
+                # Draw dinosaur (normal size)
+                self.dino_x = 100
+                self.dino_y = self.ground_y
+                self.dino = self.canvas.create_rectangle(
+                    self.dino_x - self.dino_width//2, 
+                    self.dino_y - self.normal_height,
+                    self.dino_x + self.dino_width//2, 
+                    self.dino_y, 
+                    fill="green", 
+                    outline="darkgreen"
+                )
+                
+                # Initialize obstacles
+                self.obstacles = []
+                self.obstacle_speed = self.game_speed
+                
+                # Start game loop
+                self.update_score_display()
+                self.game_loop()
+        except Exception as e:
+            messagebox.showerror("Error", f"Game start failed: {str(e)}")
     def jump(self, event=None):
         if not self.game_started or self.game_paused or self.game_over:
             return
@@ -686,8 +717,8 @@ class Game3:
         
     def create_obstacle(self):
         obstacle_types = [
-            {"width": 20, "height": 40, "y": self.ground_y - 40, "color": "red"},  # Cactus
-            {"width": 40, "height": 20, "y": self.ground_y - 20, "color": "brown"},  # Rock
+            {"width": 20, "height": 40, "y": self.ground_y, "color": "red"},  # Cactus
+            {"width": 40, "height": 20, "y": self.ground_y, "color": "brown"},  # Rock
             {"width": 60, "height": 30, "y": self.ground_y - 30, "color": "darkred"}   # Big rock
         ]
         
@@ -796,33 +827,47 @@ class Game3:
 
 class GameLauncher:
     def __init__(self):
-        self.window = tk.Tk()
-        self.window.geometry("600x450")
-        self.window.title('Game Launcher')
-       
-        self.create_widgets()
-       
-    def create_widgets(self):
-        # Title
-        title_label = Label(self.window, text="GAME LAUNCHER", font=("Helvetica", 24, "bold"))
-        title_label.pack(pady=20)
-        
-        button1 = ttk.Button(self.window, text='Space Invaders',
-                            command=lambda: Game1(Toplevel(self.window)))
-        button1.pack(expand=True, pady=10)
+        try:
+            self.window = tk.Tk()
+            self.window.geometry("600x450")
+            self.window.title('Game Launcher')
+            self.create_widgets()
+        except Exception as e:
+            messagebox.showerror("Error", f"failed to intialize launcher: {str(e)}")
+            sys.exit(1)
 
-        button2 = ttk.Button(self.window, text='Snake Game',
-                            command=lambda: Game2(Toplevel(self.window)))
-        button2.pack(expand=True, pady=10)
-        
-        button3 = ttk.Button(self.window, text='Dinosaur Run',
-                            command=lambda: Game3(Toplevel(self.window)))
-        button3.pack(expand=True, pady=10)
-       
+    def create_widgets(self):
+        """Create buttons for the game"""
+        try:
+            # Title
+            title_label = Label(self.window, text="GAME LAUNCHER", font=("Helvetica", 24, "bold"))
+            title_label.pack(pady=20)
+            
+            button1 = ttk.Button(self.window, text='Space Invaders',
+                                command=lambda: Game1(Toplevel(self.window)))
+            button1.pack(expand=True, pady=10)
+
+            button2 = ttk.Button(self.window, text='Snake Game',
+                                command=lambda: Game2(Toplevel(self.window)))
+            button2.pack(expand=True, pady=10)
+            
+            button3 = ttk.Button(self.window, text='Dinosaur Run',
+                                command=lambda: Game3(Toplevel(self.window)))
+            button3.pack(expand=True, pady=10)
+        except Exception as e:
+            messagebox.showerror("Error", f"UI setup failed: {str(e)}")
     def run(self):
-        self.window.mainloop()
+        try:
+            self.window.mainloop()
+        except Exception as e:
+            messagebox.showerror("Error",
+                                 f"application error: {str(e)}")
 
 
 if __name__ == "__main__":
-    launcher = GameLauncher()
-    launcher.run()
+    try:
+        launcher = GameLauncher()
+        launcher.run()
+    except Exception as e:
+        messagebox.showerror("Critical Error",
+                           f"Application failed to start: {str(e)}")
