@@ -28,7 +28,6 @@ import random
 import time
 import tkinter.messagebox
 
-
 class Game1:
     def __init__(self, window=None):
         try:
@@ -41,7 +40,6 @@ class Game1:
             self.extrawindow.geometry("600x450")
             self.extrawindow.config(bg="black")
 
-
             # Game variables
             self.player_speed = 10
             self.bullet_speed = -15
@@ -52,25 +50,20 @@ class Game1:
             self.game_over = False
             self.timeDelayVar = None
 
-
             # list to hold bullets and enemies
             self.bullets = []
             self.enemies = []
 
-
             # Track score
             self.score = 0
-
 
             # create player canvas
             self.canvas = Canvas(self.extrawindow, width=600, height=400, bg="black", highlightthickness=0)
             self.canvas.pack()
 
-
             # Score label
             self.score_label = Label(self.extrawindow, text=f"Score: {self.score}", font=("Helvetica", 14), bg="black", fg="white")
             self.score_label.pack()
-
 
             # Create start screen
             self.create_start_screen()
@@ -80,34 +73,28 @@ class Game1:
             self.extrawindow.bind("<Escape>", self.toggle_pause)
             self.extrawindow.bind("p", self.toggle_pause)
 
-
         except Exception as e:
-            tkinter.messagebox.showerror("Initialization Error", f"Failed to initialize Space Invaders: {str(e)}")
-            if hasattr(self, 'extrawindow'):
-                self.extrawindow.destroy()
-
+            tkinter.messagebox.showerror("Error", f"Failed to initialize Space Invaders: {str(e)}")
 
     def create_start_screen(self):
         try:
             # Clear canvas
             self.canvas.delete("all")
 
-
             # Title
             self.canvas.create_text(300, 100, text="SPACE INVADERS", font=("Helvetica", 24, "bold"), fill="white")
             self.canvas.create_text(300, 150, text="Defend Earth from alien invasion!", font=("Helvetica", 12), fill="yellow")
-           
+            
             # Controls
             self.canvas.create_text(300, 200, text="CONTROLS:", font=("Helvetica", 14, "bold"), fill="white")
             self.canvas.create_text(300, 230, text="← → : Move Left/Right", font=("Helvetica", 12), fill="lightblue")
             self.canvas.create_text(300, 260, text="SPACE : Shoot", font=("Helvetica", 12), fill="lightblue")
             self.canvas.create_text(300, 290, text="P or ESC : Pause Game", font=("Helvetica", 12), fill="lightblue")
-           
+            
             # Start instruction
             self.canvas.create_text(300, 350, text="Press SPACE to Start", font=("Helvetica", 16, "bold"), fill="green")
         except Exception as e:
-            tkinter.messagebox.showerror("UI Error", f"Failed to create start screen: {str(e)}")
-
+            tkinter.messagebox.showerror("Error", f"Failed to create start screen: {str(e)}")
 
     def show_pause_screen(self):
         try:
@@ -116,20 +103,16 @@ class Game1:
             self.pause_text = self.canvas.create_text(300, 200, text="GAME PAUSED", font=("Helvetica", 24, "bold"), fill="white")
             self.continue_text = self.canvas.create_text(300, 250, text="Press P or ESC to Continue", font=("Helvetica", 14), fill="yellow")
         except Exception as e:
-            tkinter.messagebox.showerror("UI Error", f"Failed to show pause screen: {str(e)}")
-
+            tkinter.messagebox.showerror("Error", f"Failed to show pause screen: {str(e)}")
 
     def hide_pause_screen(self):
         try:
             if hasattr(self, 'pause_overlay'):
                 self.canvas.delete(self.pause_overlay)
-            if hasattr(self, 'pause_text'):
                 self.canvas.delete(self.pause_text)
-            if hasattr(self, 'continue_text'):
                 self.canvas.delete(self.continue_text)
         except Exception as e:
             print(f"Error hiding pause screen: {e}")
-
 
     def toggle_pause(self, event=None):
         try:
@@ -141,8 +124,7 @@ class Game1:
                     self.hide_pause_screen()
                     self.game_loop()
         except Exception as e:
-            tkinter.messagebox.showerror("Game Error", f"Failed to toggle pause: {str(e)}")
-
+            tkinter.messagebox.showerror("Error", f"Failed to toggle pause: {str(e)}")
 
     def start_game(self, event=None):
         try:
@@ -153,32 +135,27 @@ class Game1:
                 # clear the start screen
                 self.canvas.delete("all")
 
-
                 # create the player
                 self.player = self.canvas.create_rectangle(275, 360, 325, 380, fill="blue")
-
 
                 # Bind the keyboard
                 self.extrawindow.bind("<Left>", self.move_player)
                 self.extrawindow.bind("<Right>", self.move_player)
                 self.extrawindow.bind("<space>", lambda event: self.fire_bullet())
 
-
                 # create our enemies
                 self.create_enemies()
-
 
                 # Start game loop
                 self.game_loop()
         except Exception as e:
-            tkinter.messagebox.showerror("Game Error", f"Failed to start game: {str(e)}")
-
+            tkinter.messagebox.showerror("Error", f"Failed to start game: {str(e)}")
 
     def move_player(self, event):
         try:
             if self.game_paused or not self.game_started or self.game_over:
                 return
-               
+                
             x = 0
             # move to the left
             if event.keysym == "Left" and self.canvas.coords(self.player)[0] > 0:
@@ -190,12 +167,11 @@ class Game1:
         except Exception as e:
             print(f"Movement error: {e}")
 
-
     def fire_bullet(self):
         try:
             if self.game_paused or not self.game_started or self.game_over:
                 return
-               
+                
             bullet = self.canvas.create_rectangle(
                 self.canvas.coords(self.player)[0] + 22,
                 350,
@@ -207,7 +183,6 @@ class Game1:
         except Exception as e:
             print(f"Bullet creation error: {e}")
 
-
     def create_enemies(self):
         try:
             for i in range(5):
@@ -215,14 +190,12 @@ class Game1:
                     enemy = self.canvas.create_rectangle(50 + j * 60, 50 + i * 30, 80 + j * 60, 80 + i * 30, fill="red")
                     self.enemies.append(enemy)
         except Exception as e:
-            tkinter.messagebox.showerror("Game Error", f"Failed to create enemies: {str(e)}")
-
+            tkinter.messagebox.showerror("Error", f"Failed to create enemies: {str(e)}")
 
     def move_bullets(self):
         try:
             for bullet in self.bullets[:]:
                 self.canvas.move(bullet, 0, self.bullet_speed)
-
 
                 if self.canvas.coords(bullet)[1] < 0:
                     self.canvas.delete(bullet)
@@ -230,22 +203,17 @@ class Game1:
         except Exception as e:
             print(f"Bullet movement error: {e}")
 
-
     def move_enemies(self):
         try:
             edge_reached = False
 
-
             for enemy in self.enemies:
                 self.canvas.move(enemy, self.enemy_speed * self.enemy_direction, 0)
 
-
                 x1, y1, x2, y2 = self.canvas.coords(enemy)
-
 
                 if x2 >= 600 or x1 <= 0:
                     edge_reached = True
-
 
             if edge_reached:
                 self.enemy_direction *= -1
@@ -254,14 +222,12 @@ class Game1:
         except Exception as e:
             print(f"Enemy movement error: {e}")
 
-
     def check_collisions(self):
         try:
             for bullet in self.bullets[:]:
                 bullet_coords = self.canvas.coords(bullet)
                 for enemy in self.enemies[:]:
                     enemy_coords = self.canvas.coords(enemy)
-
 
                     if (bullet_coords[2] > enemy_coords[0] and bullet_coords[0] < enemy_coords[2] and
                         bullet_coords[3] > enemy_coords[1] and bullet_coords[1] < enemy_coords[3]):
@@ -277,7 +243,6 @@ class Game1:
         except Exception as e:
             print(f"Collision detection error: {e}")
 
-
     def game_over_screen(self):
         try:
             self.game_over = True
@@ -287,8 +252,7 @@ class Game1:
             self.canvas.create_text(300, 350, text="Press R to Restart or ESC to Quit", fill="yellow", font=("Helvetica", 12))
             self.extrawindow.bind("r", self.restart_game)
         except Exception as e:
-            tkinter.messagebox.showerror("UI Error", f"Failed to show game over screen: {str(e)}")
-
+            tkinter.messagebox.showerror("Error", f"Failed to show game over screen: {str(e)}")
 
     def win_screen(self):
         try:
@@ -299,8 +263,7 @@ class Game1:
             self.canvas.create_text(300, 350, text="Press R to Restart or ESC to Quit", fill="yellow", font=("Helvetica", 12))
             self.extrawindow.bind("r", self.restart_game)
         except Exception as e:
-            tkinter.messagebox.showerror("UI Error", f"Failed to show win screen: {str(e)}")
-
+            tkinter.messagebox.showerror("Error", f"Failed to show win screen: {str(e)}")
 
     def restart_game(self, event=None):
         try:
@@ -312,26 +275,23 @@ class Game1:
             self.bullets = []
             self.enemies = []
             self.score_label.config(text=f"Score: {self.score}")
-           
+            
             # Unbind restart key
             self.extrawindow.unbind("r")
-           
+            
             # Show start screen
             self.create_start_screen()
         except Exception as e:
-            tkinter.messagebox.showerror("Game Error", f"Failed to restart game: {str(e)}")
-
+            tkinter.messagebox.showerror("Error", f"Failed to restart game: {str(e)}")
 
     def game_loop(self):
         try:
             if self.game_paused or self.game_over or not self.game_started:
                 return
 
-
             self.move_bullets()
             self.move_enemies()
             self.check_collisions()
-
 
             # check if enemies reach the player (game over)
             for enemy in self.enemies:
@@ -339,19 +299,15 @@ class Game1:
                     self.game_over_screen()
                     return
 
-
             # check if all enemies are destroyed (win condition)
             if not self.enemies:
                 self.win_screen()
                 return
 
-
             # set game speed
             self.extrawindow.after(50, self.game_loop)
         except Exception as e:
-            tkinter.messagebox.showerror("Game Loop Error", f"Game loop failed: {str(e)}")
-
-
+            tkinter.messagebox.showerror("Error", f"Game loop failed: {str(e)}")
 
 
 class Game2:
@@ -369,7 +325,7 @@ class Game2:
             self.SPACE_SIZE = 20
             self.BODY_SIZE = 3
             self.SNAKE = "#00FF00"
-            self.FOOD = "#FF0000"
+            self.FOOD = "#FF0000" 
             self.BACKGROUND = "#000000"
            
             self.score = 0
@@ -386,10 +342,7 @@ class Game2:
             self.show_start_screen()
            
         except Exception as e:
-            tkinter.messagebox.showerror("Initialization Error", f"Failed to initialize Snake Game: {str(e)}")
-            if hasattr(self, 'window'):
-                self.window.destroy()
-
+            tkinter.messagebox.showerror("Error", f"Failed to initialize Snake Game: {str(e)}")
 
     def setup_window(self):
         try:
@@ -403,8 +356,7 @@ class Game2:
             self.window.bind('r', self.restart_game)
             self.window.bind('<space>', self.start_game)
         except Exception as e:
-            tkinter.messagebox.showerror("Setup Error", f"Failed to setup window: {str(e)}")
-
+            tkinter.messagebox.showerror("Error", f"Failed to setup window: {str(e)}")
 
     def create_widgets(self):
         try:
@@ -412,11 +364,9 @@ class Game2:
             self.label = Label(self.window, text=f"Points: {self.score}", font=('consolas', 20))
             self.label.pack()
 
-
             # Game canvas
             self.canvas = Canvas(self.window, bg=self.BACKGROUND, height=self.HEIGHT, width=self.WIDTH)
             self.canvas.pack()
-
 
             # Center window on screen
             self.window.update()
@@ -428,50 +378,44 @@ class Game2:
             y = int((screen_height/2) - (window_height/2))
             self.window.geometry(f"{self.WIDTH}x{self.HEIGHT+50}+{x}+{y}")
         except Exception as e:
-            tkinter.messagebox.showerror("UI Error", f"Failed to create widgets: {str(e)}")
-
+            tkinter.messagebox.showerror("Error", f"Failed to create widgets: {str(e)}")
 
     def show_start_screen(self):
         try:
             self.canvas.delete("all")
-            self.canvas.create_text(self.WIDTH/2, self.HEIGHT/2 - 50,
+            self.canvas.create_text(self.WIDTH/2, self.HEIGHT/2 - 50, 
                                    text="SNAKE GAME", font=('consolas', 24, 'bold'), fill="white")
-            self.canvas.create_text(self.WIDTH/2, self.HEIGHT/2,
+            self.canvas.create_text(self.WIDTH/2, self.HEIGHT/2, 
                                    text="Use Arrow Keys to Move", font=('consolas', 14), fill="lightgreen")
-            self.canvas.create_text(self.WIDTH/2, self.HEIGHT/2 + 30,
+            self.canvas.create_text(self.WIDTH/2, self.HEIGHT/2 + 30, 
                                    text="P or ESC: Pause Game", font=('consolas', 14), fill="lightblue")
-            self.canvas.create_text(self.WIDTH/2, self.HEIGHT/2 + 60,
+            self.canvas.create_text(self.WIDTH/2, self.HEIGHT/2 + 60, 
                                    text="R: Restart Game", font=('consolas', 14), fill="lightblue")
-            self.canvas.create_text(self.WIDTH/2, self.HEIGHT/2 + 120,
+            self.canvas.create_text(self.WIDTH/2, self.HEIGHT/2 + 120, 
                                    text="Press SPACE to Start", font=('consolas', 16, 'bold'), fill="yellow")
-           
+            
             self.window.bind('<space>', self.start_game)
         except Exception as e:
-            tkinter.messagebox.showerror("UI Error", f"Failed to show start screen: {str(e)}")
-
+            tkinter.messagebox.showerror("Error", f"Failed to show start screen: {str(e)}")
 
     def show_pause_screen(self):
         try:
             self.pause_overlay = self.canvas.create_rectangle(0, 0, self.WIDTH, self.HEIGHT, fill="black", stipple="gray50")
-            self.pause_text = self.canvas.create_text(self.WIDTH/2, self.HEIGHT/2 - 20,
+            self.pause_text = self.canvas.create_text(self.WIDTH/2, self.HEIGHT/2 - 20, 
                                                     text="GAME PAUSED", font=('consolas', 24, 'bold'), fill="white")
-            self.continue_text = self.canvas.create_text(self.WIDTH/2, self.HEIGHT/2 + 20,
+            self.continue_text = self.canvas.create_text(self.WIDTH/2, self.HEIGHT/2 + 20, 
                                                        text="Press P or ESC to Continue", font=('consolas', 14), fill="yellow")
         except Exception as e:
-            tkinter.messagebox.showerror("UI Error", f"Failed to show pause screen: {str(e)}")
-
+            tkinter.messagebox.showerror("Error", f"Failed to show pause screen: {str(e)}")
 
     def hide_pause_screen(self):
         try:
             if hasattr(self, 'pause_overlay'):
                 self.canvas.delete(self.pause_overlay)
-            if hasattr(self, 'pause_text'):
                 self.canvas.delete(self.pause_text)
-            if hasattr(self, 'continue_text'):
                 self.canvas.delete(self.continue_text)
         except Exception as e:
             print(f"Error hiding pause screen: {e}")
-
 
     def toggle_pause(self, event=None):
         try:
@@ -483,8 +427,7 @@ class Game2:
                     self.hide_pause_screen()
                     self.next_turn()
         except Exception as e:
-            tkinter.messagebox.showerror("Game Error", f"Failed to toggle pause: {str(e)}")
-
+            tkinter.messagebox.showerror("Error", f"Failed to toggle pause: {str(e)}")
 
     def start_game(self, event=None):
         try:
@@ -497,28 +440,27 @@ class Game2:
                 self.snake_length = self.BODY_SIZE
                 self.window.unbind('<space>')
                 self.canvas.delete("all")
-               
+                
                 # Initialize snake in the center - align to grid
                 start_x = (self.WIDTH // 2 // self.SPACE_SIZE) * self.SPACE_SIZE
                 start_y = (self.HEIGHT // 2 // self.SPACE_SIZE) * self.SPACE_SIZE
-               
+                
                 # Create snake using the proper Snake class
                 self.snake = self.Snake(self.canvas, self.BODY_SIZE, self.SPACE_SIZE, self.SNAKE, start_x, start_y)
-               
+                
                 # Create first food
                 self.food = self.Food(self.canvas, self.WIDTH, self.HEIGHT, self.SPACE_SIZE, self.FOOD)
-               
+                
                 self.label.config(text=f"Points: {self.score}")
                 self.next_turn()
         except Exception as e:
-            tkinter.messagebox.showerror("Game Error", f"Failed to start game: {str(e)}")
-
+            tkinter.messagebox.showerror("Error", f"Failed to start game: {str(e)}")
 
     def change_direction(self, new_direction):
         try:
             if self.game_paused or not self.game_started or self.game_ended:
                 return
-               
+                
             # Prevent 180-degree turns
             if (new_direction == 'left' and self.direction != 'right') or \
                (new_direction == 'right' and self.direction != 'left') or \
@@ -528,18 +470,16 @@ class Game2:
         except Exception as e:
             print(f"Direction change error: {e}")
 
-
     def next_turn(self):
         try:
             if self.game_paused or self.game_ended or not self.game_started:
                 return
-               
+                
             if not hasattr(self, 'snake') or not self.snake.coordinates:
                 return
-               
+                
             # Get current head position
             head_x, head_y = self.snake.coordinates[0]
-
 
             # Calculate new head position based on direction
             if self.direction == "up":
@@ -551,25 +491,22 @@ class Game2:
             elif self.direction == "right":
                 new_head = (head_x + self.SPACE_SIZE, head_y)
 
-
             # Insert new head position
             self.snake.coordinates.insert(0, new_head)
 
-
             # Create new head square
             square = self.canvas.create_rectangle(
-                new_head[0], new_head[1],
-                new_head[0] + self.SPACE_SIZE,
-                new_head[1] + self.SPACE_SIZE,
+                new_head[0], new_head[1], 
+                new_head[0] + self.SPACE_SIZE, 
+                new_head[1] + self.SPACE_SIZE, 
                 fill=self.SNAKE, tags="snake"
             )
             self.snake.squares.insert(0, square)
 
-
             # Check for food collision
             food_x, food_y = self.food.coordinates
             head_x, head_y = new_head
-           
+            
             # Check if head overlaps with food (exact coordinate match)
             if head_x == food_x and head_y == food_y:
                 self.score += 1
@@ -578,12 +515,11 @@ class Game2:
                 self.canvas.delete("food")
                 self.food = self.Food(self.canvas, self.WIDTH, self.HEIGHT, self.SPACE_SIZE, self.FOOD)
             else:
-                # Remove tail if no food eaten AND snake is longer than it should be
+                # Remove tail if no food eaten
                 if len(self.snake.coordinates) > self.snake_length:
                     del self.snake.coordinates[-1]
                     self.canvas.delete(self.snake.squares[-1])
                     del self.snake.squares[-1]
-
 
             # Check for collisions
             if self.check_collisions():
@@ -591,26 +527,23 @@ class Game2:
             else:
                 self.window.after(self.SPEED, self.next_turn)
         except Exception as e:
-            tkinter.messagebox.showerror("Game Loop Error", f"Game loop failed: {str(e)}")
+            tkinter.messagebox.showerror("Error", f"Game loop failed: {str(e)}")
            
     def check_collisions(self):
         try:
             if not hasattr(self, 'snake') or not self.snake.coordinates:
                 return True
-               
+                
             head_x, head_y = self.snake.coordinates[0]
-
 
             # Wall collision
             if head_x < 0 or head_x >= self.WIDTH or head_y < 0 or head_y >= self.HEIGHT:
                 return True
 
-
             # Self collision (check if head hits any body segment)
             for body_part in self.snake.coordinates[1:]:
                 if head_x == body_part[0] and head_y == body_part[1]:
                     return True
-
 
             return False
         except Exception as e:
@@ -621,15 +554,14 @@ class Game2:
         try:
             self.game_ended = True
             self.canvas.delete("all")
-            self.canvas.create_text(self.WIDTH/2, self.HEIGHT/2 - 40,
+            self.canvas.create_text(self.WIDTH/2, self.HEIGHT/2 - 40, 
                                    font=('consolas', 40), text="GAME OVER", fill="red", tag="gameover")
-            self.canvas.create_text(self.WIDTH/2, self.HEIGHT/2 + 20,
+            self.canvas.create_text(self.WIDTH/2, self.HEIGHT/2 + 20, 
                                    font=('consolas', 20), text=f"Score: {self.score}", fill="white")
-            self.canvas.create_text(self.WIDTH/2, self.HEIGHT/2 + 60,
+            self.canvas.create_text(self.WIDTH/2, self.HEIGHT/2 + 60, 
                                    font=('consolas', 14), text="Press R to Restart", fill="yellow")
         except Exception as e:
-            tkinter.messagebox.showerror("UI Error", f"Failed to show game over screen: {str(e)}")
-
+            tkinter.messagebox.showerror("Error", f"Failed to show game over screen: {str(e)}")
 
     def restart_game(self, event=None):
         try:
@@ -645,8 +577,7 @@ class Game2:
             self.canvas.delete("all")
             self.show_start_screen()
         except Exception as e:
-            tkinter.messagebox.showerror("Game Error", f"Failed to restart game: {str(e)}")
-
+            tkinter.messagebox.showerror("Error", f"Failed to restart game: {str(e)}")
 
     class Snake:
         def __init__(self, canvas, body_size, space_size, color, start_x, start_y):
@@ -657,11 +588,10 @@ class Game2:
                 self.color = color
                 self.coordinates = []
                 self.squares = []
-               
+                
                 # Initialize snake body starting from start position
                 for i in range(body_size):
                     self.coordinates.append([start_x - (i * space_size), start_y])
-
 
                 # Create visual squares for the snake
                 for x, y in self.coordinates:
@@ -672,32 +602,28 @@ class Game2:
             except Exception as e:
                 raise Exception(f"Failed to create snake: {str(e)}")
 
-
     class Food:
         def __init__(self, canvas, width, height, space_size, color):
             try:
                 self.canvas = canvas
                 self.space_size = space_size
-               
+                
                 # Ensure food spawns on grid and doesn't spawn on edges
                 max_x = (width // space_size) - 1
                 max_y = (height // space_size) - 1
-               
+                
                 x = random.randint(1, max_x) * space_size
                 y = random.randint(1, max_y) * space_size
-               
+                
                 self.coordinates = [x, y]
-
 
                 # Create food visual
                 canvas.create_oval(
-                    x, y, x + space_size, y + space_size,
+                    x, y, x + space_size, y + space_size, 
                     fill=color, tags="food", outline="darkred"
                 )
             except Exception as e:
                 raise Exception(f"Failed to create food: {str(e)}")
-
-
 
 
 class Game3:
@@ -707,10 +633,10 @@ class Game3:
                 self.window = Tk()
             else:
                 self.window = window
-               
+                
             self.window.title("Dinosaur Run")
             self.window.geometry("800x400")
-           
+            
             # Game variables
             self.game_speed = 10
             self.jump_height = 150
@@ -724,32 +650,29 @@ class Game3:
             self.game_over = False
             self.jump_count = 0
             self.gravity = 8
-           
+            
             # Dinosaur dimensions
             self.normal_height = 40
             self.crouch_height = 20
             self.dino_width = 40
-           
+            
             # Ground level
             self.ground_y = 350
-           
+            
             # Create canvas
             self.canvas = Canvas(self.window, width=800, height=400, bg="white")
             self.canvas.pack()
-           
+            
             # Score display
             self.score_display = self.canvas.create_text(700, 30, text=f"Score: {self.score}", font=("Arial", 16), fill="black")
             self.high_score_display = self.canvas.create_text(700, 60, text=f"High Score: {self.high_score}", font=("Arial", 16), fill="black")
-           
+            
             self.setup_window()
             self.show_start_screen()
-           
+            
         except Exception as e:
-            tkinter.messagebox.showerror("Initialization Error", f"Failed to initialize Dinosaur Run: {str(e)}")
-            if hasattr(self, 'window'):
-                self.window.destroy()
-
-
+            tkinter.messagebox.showerror("Error", f"Failed to initialize Dinosaur Run: {str(e)}")
+        
     def setup_window(self):
         try:
             self.window.bind("<space>", self.start_game)
@@ -760,28 +683,26 @@ class Game3:
             self.window.bind("<Escape>", self.toggle_pause)
             self.window.bind("r", self.restart_game)
         except Exception as e:
-            tkinter.messagebox.showerror("Setup Error", f"Failed to setup window controls: {str(e)}")
-
-
+            tkinter.messagebox.showerror("Error", f"Failed to setup window controls: {str(e)}")
+        
     def show_start_screen(self):
         try:
             self.canvas.delete("all")
             self.canvas.create_text(400, 100, text="DINOSAUR RUN", font=("Arial", 32, "bold"), fill="black")
             self.canvas.create_text(400, 150, text="Infinite Runner Game", font=("Arial", 18), fill="gray")
-           
+            
             # Draw a simple dinosaur
             self.draw_dinosaur(400, 250, 50)
-           
+            
             self.canvas.create_text(400, 320, text="CONTROLS:", font=("Arial", 16, "bold"), fill="black")
             self.canvas.create_text(400, 340, text="UP ARROW: Jump", font=("Arial", 14), fill="darkgreen")
             self.canvas.create_text(400, 360, text="DOWN ARROW: Crouch (Hold)", font=("Arial", 14), fill="darkgreen")
             self.canvas.create_text(400, 380, text="P or ESC: Pause Game", font=("Arial", 14), fill="darkblue")
-           
+            
             self.canvas.create_text(400, 300, text="Press SPACE to Start", font=("Arial", 20, "bold"), fill="red")
         except Exception as e:
-            tkinter.messagebox.showerror("UI Error", f"Failed to show start screen: {str(e)}")
-
-
+            tkinter.messagebox.showerror("Error", f"Failed to show start screen: {str(e)}")
+            
     def draw_dinosaur(self, x, y, size):
         try:
             # Draw a simple dinosaur character
@@ -793,8 +714,7 @@ class Game3:
             leg2 = self.canvas.create_rectangle(x+size//4, y+size//2, x+size//2, y+size, fill="green", outline="darkgreen")
         except Exception as e:
             print(f"Error drawing dinosaur: {e}")
-
-
+        
     def start_game(self, event=None):
         try:
             if not self.game_started:
@@ -802,76 +722,72 @@ class Game3:
                 self.game_paused = False
                 self.score = 0
                 self.canvas.delete("all")
-               
+                
                 # Draw ground
                 self.ground = self.canvas.create_rectangle(0, self.ground_y, 800, 400, fill="gray", outline="gray")
-               
+                
                 # Draw dinosaur (normal size)
                 self.dino_x = 100
                 self.dino_y = self.ground_y
                 self.dino = self.canvas.create_rectangle(
-                    self.dino_x - self.dino_width//2,
+                    self.dino_x - self.dino_width//2, 
                     self.dino_y - self.normal_height,
-                    self.dino_x + self.dino_width//2,
-                    self.dino_y,
-                    fill="green",
+                    self.dino_x + self.dino_width//2, 
+                    self.dino_y, 
+                    fill="green", 
                     outline="darkgreen"
                 )
-               
+                
                 # Initialize obstacles
                 self.obstacles = []
                 self.obstacle_speed = self.game_speed
-               
+                
                 # Start game loop
                 self.update_score_display()
                 self.game_loop()
         except Exception as e:
-            tkinter.messagebox.showerror("Game Error", f"Failed to start game: {str(e)}")
-
-
+            tkinter.messagebox.showerror("Error", f"Failed to start game: {str(e)}")
+            
     def jump(self, event=None):
         try:
             if not self.game_started or self.game_paused or self.game_over:
                 return
-               
+                
             if not self.is_jumping and not self.is_crouching:
                 self.is_jumping = True
                 self.jump_count = 0
         except Exception as e:
             print(f"Jump error: {e}")
-
-
+            
     def crouch(self, event=None):
         try:
             if not self.game_started or self.game_paused or self.game_over:
                 return
-               
+                
             if not self.is_jumping:
                 self.is_crouching = True
                 # Make dinosaur shorter when crouching
-                self.canvas.coords(self.dino,
-                                 self.dino_x - self.dino_width//2,
+                self.canvas.coords(self.dino, 
+                                 self.dino_x - self.dino_width//2, 
                                  self.dino_y - self.crouch_height,
-                                 self.dino_x + self.dino_width//2,
+                                 self.dino_x + self.dino_width//2, 
                                  self.dino_y)
         except Exception as e:
             print(f"Crouch error: {e}")
-
-
+            
     def stand_up(self, event=None):
         try:
             if self.is_crouching and not self.is_jumping:
                 self.is_crouching = False
                 # Restore normal dinosaur size
-                self.canvas.coords(self.dino,
-                                 self.dino_x - self.dino_width//2,
+                self.canvas.coords(self.dino, 
+                                 self.dino_x - self.dino_width//2, 
                                  self.dino_y - self.normal_height,
-                                 self.dino_x + self.dino_width//2,
+                                 self.dino_x + self.dino_width//2, 
                                  self.dino_y)
         except Exception as e:
             print(f"Stand up error: {e}")
-
-
+            
     def toggle_pause(self, event=None):
         try:
             if self.game_started and not self.game_over:
@@ -882,31 +798,204 @@ class Game3:
                     self.hide_pause_screen()
                     self.game_loop()
         except Exception as e:
-            tkinter.messagebox.showerror("Game Error", f"Failed to toggle pause: {str(e)}")
-
-
+            tkinter.messagebox.showerror("Error", f"Failed to toggle pause: {str(e)}")
+                
     def show_pause_screen(self):
         try:
             self.pause_overlay = self.canvas.create_rectangle(200, 150, 600, 250, fill="white", outline="black", width=2)
             self.pause_text = self.canvas.create_text(400, 200, text="GAME PAUSED", font=("Arial", 24, "bold"), fill="black")
         except Exception as e:
-            tkinter.messagebox.showerror("UI Error", f"Failed to show pause screen: {str(e)}")
-
-
+            tkinter.messagebox.showerror("Error", f"Failed to show pause screen: {str(e)}")
+            
     def hide_pause_screen(self):
         try:
             if hasattr(self, 'pause_overlay'):
                 self.canvas.delete(self.pause_overlay)
-            if hasattr(self, 'pause_text'):
                 self.canvas.delete(self.pause_text)
         except Exception as e:
             print(f"Error hiding pause screen: {e}")
-
-
+            
     def update_score_display(self):
         try:
             self.canvas.itemconfig(self.score_display, text=f"Score: {self.score}")
-       
             self.canvas.itemconfig(self.high_score_display, text=f"High Score: {self.high_score}")
         except Exception as e:
             print(f"Score update error: {e}")
+            
+    def create_obstacle(self):
+        try:
+            obstacle_types = [
+                {"width": 20, "height": 40, "y": self.ground_y - 40, "color": "red"},
+                {"width": 40, "height": 20, "y": self.ground_y - 20, "color": "brown"},
+                {"width": 60, "height": 30, "y": self.ground_y - 30, "color": "darkred"}
+            ]
+            
+            obstacle_type = random.choice(obstacle_types)
+            obstacle = self.canvas.create_rectangle(
+                800, obstacle_type["y"] - obstacle_type["height"],
+                800 + obstacle_type["width"], obstacle_type["y"],
+                fill=obstacle_type["color"], outline="black"
+            )
+            
+            self.obstacles.append({
+                "id": obstacle,
+                "width": obstacle_type["width"],
+                "height": obstacle_type["height"],
+                "y": obstacle_type["y"]
+            })
+        except Exception as e:
+            print(f"Error creating obstacle: {e}")
+        
+    def move_obstacles(self):
+        try:
+            for obstacle in self.obstacles[:]:
+                self.canvas.move(obstacle["id"], -self.obstacle_speed, 0)
+                
+                # Remove obstacles that are off screen
+                if self.canvas.coords(obstacle["id"])[2] < 0:
+                    self.canvas.delete(obstacle["id"])
+                    self.obstacles.remove(obstacle)
+        except Exception as e:
+            print(f"Error moving obstacles: {e}")
+                
+    def check_collisions(self):
+        try:
+            dino_coords = self.canvas.coords(self.dino)
+            
+            for obstacle in self.obstacles:
+                obstacle_coords = self.canvas.coords(obstacle["id"])
+                
+                # Simple collision detection
+                if (dino_coords[2] > obstacle_coords[0] and
+                    dino_coords[0] < obstacle_coords[2] and
+                    dino_coords[1] < obstacle_coords[3] and
+                    dino_coords[3] > obstacle_coords[1]):
+                    return True
+                    
+            return False
+        except Exception as e:
+            print(f"Collision detection error: {e}")
+            return False
+        
+    def handle_jump(self):
+        try:
+            if self.is_jumping:
+                if self.jump_count < self.jump_height // self.jump_speed:
+                    self.canvas.move(self.dino, 0, -self.jump_speed)
+                    self.jump_count += 1
+                else:
+                    self.is_jumping = False
+            elif self.canvas.coords(self.dino)[3] < self.ground_y:
+                # Apply gravity
+                self.canvas.move(self.dino, 0, self.gravity)
+        except Exception as e:
+            print(f"Jump handling error: {e}")
+            
+    def game_loop(self):
+        try:
+            if self.game_paused or self.game_over or not self.game_started:
+                return
+                
+            # Handle jumping
+            self.handle_jump()
+            
+            # Move obstacles
+            self.move_obstacles()
+            
+            # Create new obstacles randomly
+            if random.random() < 0.02 and len(self.obstacles) < 3:
+                self.create_obstacle()
+                
+            # Increase score
+            self.score += 1
+            if self.score > self.high_score:
+                self.high_score = self.score
+                
+            # Increase difficulty
+            if self.score % 500 == 0:
+                self.obstacle_speed += 1
+                
+            # Check collisions
+            if self.check_collisions():
+                self.game_over_screen()
+                return
+                
+            self.update_score_display()
+            self.window.after(30, self.game_loop)
+        except Exception as e:
+            tkinter.messagebox.showerror("Error", f"Game loop failed: {str(e)}")
+        
+    def game_over_screen(self):
+        try:
+            self.game_over = True
+            # Make sure dinosaur is standing up when game ends
+            if self.is_crouching:
+                self.stand_up()
+                
+            self.canvas.create_rectangle(200, 150, 600, 300, fill="white", outline="red", width=3)
+            self.canvas.create_text(400, 180, text="GAME OVER", font=("Arial", 28, "bold"), fill="red")
+            self.canvas.create_text(400, 220, text=f"Final Score: {self.score}", font=("Arial", 20), fill="black")
+            self.canvas.create_text(400, 250, text=f"High Score: {self.high_score}", font=("Arial", 20), fill="black")
+            self.canvas.create_text(400, 280, text="Press R to Restart", font=("Arial", 16), fill="blue")
+        except Exception as e:
+            tkinter.messagebox.showerror("Error", f"Failed to show game over screen: {str(e)}")
+        
+    def restart_game(self, event=None):
+        try:
+            self.score = 0
+            self.game_started = False
+            self.game_paused = False
+            self.game_over = False
+            self.is_crouching = False
+            self.is_jumping = False
+            self.obstacle_speed = self.game_speed
+            self.obstacles = []
+            self.show_start_screen()
+        except Exception as e:
+            tkinter.messagebox.showerror("Error", f"Failed to restart game: {str(e)}")
+
+
+class GameLauncher:
+    def __init__(self):
+        try:
+            self.window = tk.Tk()
+            self.window.geometry("600x450")
+            self.window.title('Game Launcher')
+           
+            self.create_widgets()
+        except Exception as e:
+            tkinter.messagebox.showerror("Error", f"Failed to initialize Game Launcher: {str(e)}")
+       
+    def create_widgets(self):
+        try:
+            # Title
+            title_label = Label(self.window, text="GAME LAUNCHER", font=("Helvetica", 24, "bold"))
+            title_label.pack(pady=20)
+            
+            button1 = ttk.Button(self.window, text='Space Invaders',
+                                command=lambda: Game1(Toplevel(self.window)))
+            button1.pack(expand=True, pady=10)
+
+            button2 = ttk.Button(self.window, text='Snake Game',
+                                command=lambda: Game2(Toplevel(self.window)))
+            button2.pack(expand=True, pady=10)
+            
+            button3 = ttk.Button(self.window, text='Dinosaur Run',
+                                command=lambda: Game3(Toplevel(self.window)))
+            button3.pack(expand=True, pady=10)
+        except Exception as e:
+            tkinter.messagebox.showerror("Error", f"Failed to create launcher UI: {str(e)}")
+       
+    def run(self):
+        try:
+            self.window.mainloop()
+        except Exception as e:
+            tkinter.messagebox.showerror("Error", f"Application failed to run: {str(e)}")
+
+
+if __name__ == "__main__":
+    try:
+        launcher = GameLauncher()
+        launcher.run()
+    except Exception as e:
+        tkinter.messagebox.showerror("Critical Error", f"Application failed to start: {str(e)}")
