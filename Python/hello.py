@@ -101,18 +101,13 @@ class Game1:
 
     def hide_pause_screen(self):
         try:
-            self.canvas.delete("all")
-            #game elements
-            self.canvas.create_rectangle(0, 0, 600, 400, fill="black")
-            #player
-            self.player = self.canvas.create_rectangle(275, 360, 325, 380, fill="blue")
-            #enemies and bullets
-            for enemy in self.enemies:
-                x1, y1, x2, y2 = self.canvas.coords(enemy)
-                self.canvas.create_rectangle(x1, y1, x2, y2, fill="red")
-            for bullet in self.bullets:
-                x1, y1, x2, y2 = self.canvas.coords(bullet)
-                self.canvas.create_rectangle(x1, y1, x2, y2, fill="yellow")
+            # Simply delete the pause screen elements
+            if (self, 'pause_overlay'):
+                self.canvas.delete(self.pause_overlay)
+            if (self, 'pause_text'):
+                self.canvas.delete(self.pause_text)
+            if (self, 'continue_text'):
+                self.canvas.delete(self.continue_text)
         except Exception as e:
             print(f"Error hiding pause screen: {e}")
 
@@ -196,12 +191,17 @@ class Game1:
 
     def move_bullets(self):
         try:
-            for bullet in self.bullets[:]:
+            for bullet in self.bullets[:]:  # Use slice copy to avoid modification during iteration
+                if not self.canvas.coords(bullet):  # Check if bullet still exists
+                    continue
+                    
                 self.canvas.move(bullet, 0, self.bullet_speed)
 
-                if self.canvas.coords(bullet)[1] < 0:
+                bullet_coords = self.canvas.coords(bullet)
+                if bullet_coords and bullet_coords[1] < 0:  # Check if coords exist and bullet is off screen
                     self.canvas.delete(bullet)
-                    self.bullets.remove(bullet)
+                    if bullet in self.bullets:
+                        self.bullets.remove(bullet)
         except Exception as e:
             print(f"Bullet movement error: {e}")
 
@@ -209,49 +209,67 @@ class Game1:
         try:
             edge_reached = False
 
-            for enemy in self.enemies:
+            for enemy in self.enemies[:]:  # Use slice copy to avoid modification during iteration
+                if not self.canvas.coords(enemy):  # Check if enemy still exists
+                    continue
+                    
                 self.canvas.move(enemy, self.enemy_speed * self.enemy_direction, 0)
 
-                x1, y1, x2, y2 = self.canvas.coords(enemy)
-
-                if x2 >= 600 or x1 <= 0:
-                    edge_reached = True
+                enemy_coords = self.canvas.coords(enemy)
+                if enemy_coords:  # Check if coords exist
+                    x1, y1, x2, y2 = enemy_coords
+                    if x2 >= 600 or x1 <= 0:
+                        edge_reached = True
 
             if edge_reached:
                 self.enemy_direction *= -1
                 for enemy in self.enemies:
-                    self.canvas.move(enemy, 0, 20)
+                    if self.canvas.coords(enemy):  # Check if enemy still exists
+                        self.canvas.move(enemy, 0, 20)
         except Exception as e:
             print(f"Enemy movement error: {e}")
 
     def check_collisions(self):
         try:
-            for bullet in self.bullets[:]:
+            for bullet in self.bullets[:]:  # Use slice copy to avoid modification during iteration
                 bullet_coords = self.canvas.coords(bullet)
-                for enemy in self.enemies[:]:
+                if not bullet_coords:  # Skip if bullet no longer exists
+                    continue
+                    
+                for enemy in self.enemies[:]:  # Use slice copy to avoid modification during iteration
                     enemy_coords = self.canvas.coords(enemy)
+                    if not enemy_coords:  # Skip if enemy no longer exists
+                        continue
 
+                    # Check if both objects still exist and have valid coordinates
                     if (bullet_coords[2] > enemy_coords[0] and bullet_coords[0] < enemy_coords[2] and
                         bullet_coords[3] > enemy_coords[1] and bullet_coords[1] < enemy_coords[3]):
+                        
+                        # Remove both bullet and enemy
                         self.canvas.delete(bullet)
                         self.canvas.delete(enemy)
+                        
+                        # Safely remove from lists
                         if bullet in self.bullets:
                             self.bullets.remove(bullet)
                         if enemy in self.enemies:
                             self.enemies.remove(enemy)
+                            
                         self.score += 10
                         self.score_label.config(text=f"Score: {self.score}")
-                        break
+                        break  # Break inner loop after collision
         except Exception as e:
             print(f"Collision detection error: {e}")
 
     def game_over_screen(self):
         try:
             self.game_over = True
+            self.canvas.delete("all")
             self.canvas.create_rectangle(150, 150, 450, 250, fill="black", outline="white")
             self.canvas.create_text(300, 180, text="GAME OVER", fill="red", font=("Helvetica", 24, "bold"))
             self.canvas.create_text(300, 220, text=f"Final Score: {self.score}", fill="white", font=("Helvetica", 14))
-            self.canvas.create_text(300, 350, text="Press R to Restart or ESC to Quit", fill="yellow", font=("Helvetica", 12))
+            self.canvas.create_text(300, 350, text="Press R to Restart", fill="yellow", font=("Helvetica", 12))
+            # Bind restart key
             self.extrawindow.bind("r", self.restart_game)
         except Exception as e:
             tkinter.messagebox.showerror("Error", f"Failed to show game over screen: {str(e)}")
@@ -259,10 +277,12 @@ class Game1:
     def win_screen(self):
         try:
             self.game_over = True
+            self.canvas.delete("all")
             self.canvas.create_rectangle(150, 150, 450, 250, fill="black", outline="green")
             self.canvas.create_text(300, 180, text="YOU WIN!", fill="green", font=("Helvetica", 24, "bold"))
             self.canvas.create_text(300, 220, text=f"Final Score: {self.score}", fill="white", font=("Helvetica", 14))
-            self.canvas.create_text(300, 350, text="Press R to Restart or ESC to Quit", fill="yellow", font=("Helvetica", 12))
+            self.canvas.create_text(300, 350, text="Press R to Restart", fill="yellow", font=("Helvetica", 12))
+            # Bind restart key
             self.extrawindow.bind("r", self.restart_game)
         except Exception as e:
             tkinter.messagebox.showerror("Error", f"Failed to show win screen: {str(e)}")
@@ -276,10 +296,19 @@ class Game1:
             self.score = 0
             self.bullets = []
             self.enemies = []
+            self.enemy_direction = 1
             self.score_label.config(text=f"Score: {self.score}")
             
-            # Unbind restart key
+            # Unbind all keys first
+            self.extrawindow.unbind("<Left>")
+            self.extrawindow.unbind("<Right>")
+            self.extrawindow.unbind("<space>")
             self.extrawindow.unbind("r")
+            
+            # Rebind essential keys
+            self.extrawindow.bind("<space>", self.start_game)
+            self.extrawindow.bind("<Escape>", self.toggle_pause)
+            self.extrawindow.bind("p", self.toggle_pause)
             
             # Show start screen
             self.create_start_screen()
@@ -296,8 +325,9 @@ class Game1:
             self.check_collisions()
 
             # check if enemies reach the player (game over)
-            for enemy in self.enemies:
-                if self.canvas.coords(enemy)[3] >= 360:
+            for enemy in self.enemies[:]:  # Use slice copy
+                enemy_coords = self.canvas.coords(enemy)
+                if enemy_coords and enemy_coords[3] >= 360:  # Check if coords exist and enemy reached bottom
                     self.game_over_screen()
                     return
 
@@ -346,7 +376,7 @@ class Game2:
            
         except Exception as e:
             tkinter.messagebox.showerror("Initialization Error", f"Failed to initialize Snake Game: {str(e)}")
-            if hasattr(self, 'window'):
+            if (self, 'window'):
                 self.window.destroy()
 
     def setup_window(self):
@@ -429,20 +459,13 @@ class Game2:
 
     def hide_pause_screen(self):
         try:
-            self.canvas.delete("all")
-            # Redraw grid background first
-            self.draw_grid()
-            
-            # Redraw snake
-            if (self, 'snake') and self.snake:
-                for x, y in self.snake.coordinates:
-                    self.canvas.create_rectangle(x, y, x + self.SPACE_SIZE, y + self.SPACE_SIZE, fill=self.SNAKE, tags="snake")
-            
-            # Redraw food
-            if (self, 'food') and self.food:
-                x, y = self.food.coordinates
-                self.canvas.create_oval(x + 2, y + 2, x + self.SPACE_SIZE - 2, y + self.SPACE_SIZE - 2, 
-                                      fill=self.FOOD, tags="food", outline="darkred")
+            # Simply delete the pause screen elements - FIXED
+            if (self, 'pause_overlay'):
+                self.canvas.delete(self.pause_overlay)
+            if (self, 'pause_text'):
+                self.canvas.delete(self.pause_text)
+            if (self, 'continue_text'):
+                self.canvas.delete(self.continue_text)
         except Exception as e:
             print(f"Error hiding pause screen: {e}")
 
@@ -535,12 +558,12 @@ class Game2:
             )
             self.snake.squares.insert(0, square)
 
-            # Check for food collision
+            # Check for food collision - FIXED COLLISION DETECTION
             food_x, food_y = self.food.coordinates
             head_x, head_y = new_head
             
-            # Check if head overlaps with food (exact coordinate match)
-            if head_x == food_x and head_y == food_y:
+            # Improved collision detection - check if head occupies the same space as food
+            if (head_x == food_x and head_y == food_y):
                 self.score += 1
                 self.snake_length += 1
                 self.label.config(text=f"Points: {self.score}")
@@ -823,7 +846,6 @@ class Game3:
             
         except Exception as e:
             print(f"Error creating background: {e}")
-    
         
     def start_game(self, event=None):
         try:
