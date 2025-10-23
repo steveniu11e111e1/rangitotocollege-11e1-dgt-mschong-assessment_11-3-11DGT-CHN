@@ -1,16 +1,10 @@
 """Project starfish: A GUI-based game launcher with three mini-games.
 
-
-
-
 1.Space Invaders: Defend Earth from alien invasion by shooting them down.
 2.Snake Game: Control a snake to eat food and grow without hitting
 walls or yourself.
 3.Dinosaur Run: Jump over obstacles as a running dinosaur to achieve
 high score.
-
-
-
 
 Class: purpose is to organize each function of the game.
 Def: are the function of the game in control of the games controls,
@@ -19,7 +13,6 @@ try and except: blocks to catch errors and display message boxes for
 user feedback.
 message box: are used to inform users of there error of interaction.
 """
-
 
 from tkinter import *
 import tkinter as tk
@@ -72,6 +65,7 @@ class Game1:
             self.extrawindow.bind("<space>", self.start_game)
             self.extrawindow.bind("<Escape>", self.toggle_pause)
             self.extrawindow.bind("p", self.toggle_pause)
+            self.extrawindow.focus_set()  # Ensure window has focus
 
         except Exception as e:
             tkinter.messagebox.showerror("Error", f"Failed to initialize Space Invaders: {str(e)}")
@@ -107,10 +101,18 @@ class Game1:
 
     def hide_pause_screen(self):
         try:
-            if hasattr(self, 'pause_overlay'):
-                self.canvas.delete(self.pause_overlay)
-                self.canvas.delete(self.pause_text)
-                self.canvas.delete(self.continue_text)
+            self.canvas.delete("all")
+            #game elements
+            self.canvas.create_rectangle(0, 0, 600, 400, fill="black")
+            #player
+            self.player = self.canvas.create_rectangle(275, 360, 325, 380, fill="blue")
+            #enemies and bullets
+            for enemy in self.enemies:
+                x1, y1, x2, y2 = self.canvas.coords(enemy)
+                self.canvas.create_rectangle(x1, y1, x2, y2, fill="red")
+            for bullet in self.bullets:
+                x1, y1, x2, y2 = self.canvas.coords(bullet)
+                self.canvas.create_rectangle(x1, y1, x2, y2, fill="yellow")
         except Exception as e:
             print(f"Error hiding pause screen: {e}")
 
@@ -327,6 +329,7 @@ class Game2:
             self.SNAKE = "#00FF00"
             self.FOOD = "#FF0000" 
             self.BACKGROUND = "#000000"
+            self.GRID_COLOR = "#333333"  # Dark gray for grid lines
            
             self.score = 0
             self.direction = 'right'
@@ -342,7 +345,9 @@ class Game2:
             self.show_start_screen()
            
         except Exception as e:
-            tkinter.messagebox.showerror("Error", f"Failed to initialize Snake Game: {str(e)}")
+            tkinter.messagebox.showerror("Initialization Error", f"Failed to initialize Snake Game: {str(e)}")
+            if hasattr(self, 'window'):
+                self.window.destroy()
 
     def setup_window(self):
         try:
@@ -355,8 +360,9 @@ class Game2:
             self.window.bind('<Escape>', self.toggle_pause)
             self.window.bind('r', self.restart_game)
             self.window.bind('<space>', self.start_game)
+            self.window.focus_set()  # Ensure window has focus
         except Exception as e:
-            tkinter.messagebox.showerror("Error", f"Failed to setup window: {str(e)}")
+            tkinter.messagebox.showerror("Setup Error", f"Failed to setup window: {str(e)}")
 
     def create_widgets(self):
         try:
@@ -378,7 +384,20 @@ class Game2:
             y = int((screen_height/2) - (window_height/2))
             self.window.geometry(f"{self.WIDTH}x{self.HEIGHT+50}+{x}+{y}")
         except Exception as e:
-            tkinter.messagebox.showerror("Error", f"Failed to create widgets: {str(e)}")
+            tkinter.messagebox.showerror("UI Error", f"Failed to create widgets: {str(e)}")
+
+    def draw_grid(self):
+        """Draw a grid on the canvas to help visualize movement"""
+        try:
+            # Draw vertical lines
+            for i in range(0, self.WIDTH, self.SPACE_SIZE):
+                self.canvas.create_line(i, 0, i, self.HEIGHT, fill=self.GRID_COLOR, width=1)
+            
+            # Draw horizontal lines
+            for i in range(0, self.HEIGHT, self.SPACE_SIZE):
+                self.canvas.create_line(0, i, self.WIDTH, i, fill=self.GRID_COLOR, width=1)
+        except Exception as e:
+            print(f"Error drawing grid: {e}")
 
     def show_start_screen(self):
         try:
@@ -396,7 +415,7 @@ class Game2:
             
             self.window.bind('<space>', self.start_game)
         except Exception as e:
-            tkinter.messagebox.showerror("Error", f"Failed to show start screen: {str(e)}")
+            tkinter.messagebox.showerror("UI Error", f"Failed to show start screen: {str(e)}")
 
     def show_pause_screen(self):
         try:
@@ -406,14 +425,24 @@ class Game2:
             self.continue_text = self.canvas.create_text(self.WIDTH/2, self.HEIGHT/2 + 20, 
                                                        text="Press P or ESC to Continue", font=('consolas', 14), fill="yellow")
         except Exception as e:
-            tkinter.messagebox.showerror("Error", f"Failed to show pause screen: {str(e)}")
+            tkinter.messagebox.showerror("UI Error", f"Failed to show pause screen: {str(e)}")
 
     def hide_pause_screen(self):
         try:
-            if hasattr(self, 'pause_overlay'):
-                self.canvas.delete(self.pause_overlay)
-                self.canvas.delete(self.pause_text)
-                self.canvas.delete(self.continue_text)
+            self.canvas.delete("all")
+            # Redraw grid background first
+            self.draw_grid()
+            
+            # Redraw snake
+            if (self, 'snake') and self.snake:
+                for x, y in self.snake.coordinates:
+                    self.canvas.create_rectangle(x, y, x + self.SPACE_SIZE, y + self.SPACE_SIZE, fill=self.SNAKE, tags="snake")
+            
+            # Redraw food
+            if (self, 'food') and self.food:
+                x, y = self.food.coordinates
+                self.canvas.create_oval(x + 2, y + 2, x + self.SPACE_SIZE - 2, y + self.SPACE_SIZE - 2, 
+                                      fill=self.FOOD, tags="food", outline="darkred")
         except Exception as e:
             print(f"Error hiding pause screen: {e}")
 
@@ -427,7 +456,7 @@ class Game2:
                     self.hide_pause_screen()
                     self.next_turn()
         except Exception as e:
-            tkinter.messagebox.showerror("Error", f"Failed to toggle pause: {str(e)}")
+            tkinter.messagebox.showerror("Game Error", f"Failed to toggle pause: {str(e)}")
 
     def start_game(self, event=None):
         try:
@@ -440,6 +469,9 @@ class Game2:
                 self.snake_length = self.BODY_SIZE
                 self.window.unbind('<space>')
                 self.canvas.delete("all")
+                
+                # Draw grid background first
+                self.draw_grid()
                 
                 # Initialize snake in the center - align to grid
                 start_x = (self.WIDTH // 2 // self.SPACE_SIZE) * self.SPACE_SIZE
@@ -454,7 +486,7 @@ class Game2:
                 self.label.config(text=f"Points: {self.score}")
                 self.next_turn()
         except Exception as e:
-            tkinter.messagebox.showerror("Error", f"Failed to start game: {str(e)}")
+            tkinter.messagebox.showerror("Game Error", f"Failed to start game: {str(e)}")
 
     def change_direction(self, new_direction):
         try:
@@ -515,7 +547,7 @@ class Game2:
                 self.canvas.delete("food")
                 self.food = self.Food(self.canvas, self.WIDTH, self.HEIGHT, self.SPACE_SIZE, self.FOOD)
             else:
-                # Remove tail if no food eaten
+                # Remove tail if no food eaten AND snake is longer than it should be
                 if len(self.snake.coordinates) > self.snake_length:
                     del self.snake.coordinates[-1]
                     self.canvas.delete(self.snake.squares[-1])
@@ -527,8 +559,8 @@ class Game2:
             else:
                 self.window.after(self.SPEED, self.next_turn)
         except Exception as e:
-            tkinter.messagebox.showerror("Error", f"Game loop failed: {str(e)}")
-           
+            tkinter.messagebox.showerror("Game Loop Error", f"Game loop failed: {str(e)}")
+
     def check_collisions(self):
         try:
             if not hasattr(self, 'snake') or not self.snake.coordinates:
@@ -554,6 +586,9 @@ class Game2:
         try:
             self.game_ended = True
             self.canvas.delete("all")
+            # Redraw grid in background
+            self.draw_grid()
+            
             self.canvas.create_text(self.WIDTH/2, self.HEIGHT/2 - 40, 
                                    font=('consolas', 40), text="GAME OVER", fill="red", tag="gameover")
             self.canvas.create_text(self.WIDTH/2, self.HEIGHT/2 + 20, 
@@ -561,7 +596,7 @@ class Game2:
             self.canvas.create_text(self.WIDTH/2, self.HEIGHT/2 + 60, 
                                    font=('consolas', 14), text="Press R to Restart", fill="yellow")
         except Exception as e:
-            tkinter.messagebox.showerror("Error", f"Failed to show game over screen: {str(e)}")
+            tkinter.messagebox.showerror("UI Error", f"Failed to show game over screen: {str(e)}")
 
     def restart_game(self, event=None):
         try:
@@ -577,7 +612,7 @@ class Game2:
             self.canvas.delete("all")
             self.show_start_screen()
         except Exception as e:
-            tkinter.messagebox.showerror("Error", f"Failed to restart game: {str(e)}")
+            tkinter.messagebox.showerror("Game Error", f"Failed to restart game: {str(e)}")
 
     class Snake:
         def __init__(self, canvas, body_size, space_size, color, start_x, start_y):
@@ -617,14 +652,13 @@ class Game2:
                 
                 self.coordinates = [x, y]
 
-                # Create food visual
+                # Create food visual with a slight glow effect
                 canvas.create_oval(
-                    x, y, x + space_size, y + space_size, 
+                    x + 2, y + 2, x + space_size - 2, y + space_size - 2, 
                     fill=color, tags="food", outline="darkred"
                 )
             except Exception as e:
                 raise Exception(f"Failed to create food: {str(e)}")
-
 
 class Game3:
     def __init__(self, window=None):
@@ -659,8 +693,21 @@ class Game3:
             # Ground level
             self.ground_y = 350
             
+            # Background variables
+            self.bg_speed = 2
+            self.clouds = []
+            self.mountains = []
+            self.ground_patterns = []
+            self.bg_elements = []
+            
+            # Obstacle spacing variables
+            self.min_obstacle_spacing = 300  # Minimum distance between obstacles
+            self.max_obstacle_spacing = 600  # Maximum distance between obstacles
+            self.last_obstacle_x = 800       # X position of the last obstacle created
+            self.obstacle_spawn_timer = 0    # Timer to control spawn frequency
+            
             # Create canvas
-            self.canvas = Canvas(self.window, width=800, height=400, bg="white")
+            self.canvas = Canvas(self.window, width=800, height=400, bg="lightblue")
             self.canvas.pack()
             
             # Score display
@@ -682,12 +729,16 @@ class Game3:
             self.window.bind("p", self.toggle_pause)
             self.window.bind("<Escape>", self.toggle_pause)
             self.window.bind("r", self.restart_game)
+            self.window.focus_set()  # Ensure window has focus
         except Exception as e:
             tkinter.messagebox.showerror("Error", f"Failed to setup window controls: {str(e)}")
         
     def show_start_screen(self):
         try:
             self.canvas.delete("all")
+            # Draw background for start screen
+            self.canvas.create_rectangle(0, 0, 800, 400, fill="lightblue", outline="")
+            
             self.canvas.create_text(400, 100, text="DINOSAUR RUN", font=("Arial", 32, "bold"), fill="black")
             self.canvas.create_text(400, 150, text="Infinite Runner Game", font=("Arial", 18), fill="gray")
             
@@ -714,6 +765,65 @@ class Game3:
             leg2 = self.canvas.create_rectangle(x+size//4, y+size//2, x+size//2, y+size, fill="green", outline="darkgreen")
         except Exception as e:
             print(f"Error drawing dinosaur: {e}")
+    
+    def create_background(self):
+        """Create the scrolling background elements"""
+        try:
+            # Clear any existing background elements
+            self.clouds = []
+            self.mountains = []
+            self.ground_patterns = []
+            self.bg_elements = []
+            
+            # Create sky gradient
+            for i in range(0, 400, 20):
+                color_intensity = 255 - int(i * 0.3)
+                if color_intensity < 150:
+                    color_intensity = 150
+                color = f"#{color_intensity:02x}{color_intensity:02x}ff"
+                self.canvas.create_rectangle(0, i, 800, i+20, fill=color, outline="")
+            
+            # Create distant mountains (move slower) - BEHIND everything
+            for i in range(5):
+                x = random.randint(0, 800)
+                height = random.randint(50, 100)
+                mountain = self.canvas.create_polygon(
+                    x, 350, 
+                    x-80, 350, 
+                    x-40, 350-height,
+                    fill="gray", outline="darkgray"
+                )
+                self.mountains.append({"id": mountain, "speed": self.bg_speed * 0.5, "type": "distant"})
+            
+            # Create mid-distance mountains (move medium speed) - BEHIND everything
+            for i in range(4):
+                x = random.randint(0, 800)
+                height = random.randint(80, 150)
+                mountain = self.canvas.create_polygon(
+                    x, 350, 
+                    x-120, 350, 
+                    x-60, 350-height,
+                    fill="darkgray", outline="black"
+                )
+                self.mountains.append({"id": mountain, "speed": self.bg_speed * 0.7, "type": "mid"})
+            
+            # Create clouds - BEHIND everything
+            for i in range(6):
+                x = random.randint(0, 800)
+                y = random.randint(50, 200)
+                size = random.randint(30, 60)
+                cloud = self.canvas.create_oval(
+                    x, y, x+size, y+size//2,
+                    fill="white", outline="lightgray"
+                )
+                self.clouds.append({"id": cloud, "speed": self.bg_speed * 0.3})
+            
+            # Store all background elements
+            self.bg_elements = self.mountains + self.clouds
+            
+        except Exception as e:
+            print(f"Error creating background: {e}")
+    
         
     def start_game(self, event=None):
         try:
@@ -723,10 +833,17 @@ class Game3:
                 self.score = 0
                 self.canvas.delete("all")
                 
-                # Draw ground
-                self.ground = self.canvas.create_rectangle(0, self.ground_y, 800, 400, fill="gray", outline="gray")
+                # Reset obstacle spacing variables
+                self.last_obstacle_x = 800
+                self.obstacle_spawn_timer = 0
                 
-                # Draw dinosaur (normal size)
+                # Create background first (this will be behind everything)
+                self.create_background()
+                
+                # Draw ground (main ground layer) - behind dinosaur but in front of mountains
+                self.ground = self.canvas.create_rectangle(0, self.ground_y, 800, 400, fill="sandybrown", outline="")
+                
+                # Draw dinosaur (normal size) - this should be in front of everything
                 self.dino_x = 100
                 self.dino_y = self.ground_y
                 self.dino = self.canvas.create_rectangle(
@@ -738,9 +855,19 @@ class Game3:
                     outline="darkgreen"
                 )
                 
-                # Initialize obstacles
+                # Make sure dinosaur is in front of all background elements
+                self.canvas.tag_raise(self.dino)
+                
+                # Initialize obstacles - these should be in front of dinosaur
                 self.obstacles = []
                 self.obstacle_speed = self.game_speed
+                
+                # Create initial obstacle
+                self.create_obstacle()
+                
+                # Ensure obstacles are in front of dinosaur
+                for obstacle in self.obstacles:
+                    self.canvas.tag_raise(obstacle["id"])
                 
                 # Start game loop
                 self.update_score_display()
@@ -748,12 +875,23 @@ class Game3:
         except Exception as e:
             tkinter.messagebox.showerror("Error", f"Failed to start game: {str(e)}")
             
+    def is_on_ground(self):
+        """Check if the dinosaur is touching the ground"""
+        try:
+            dino_coords = self.canvas.coords(self.dino)
+            # The dinosaur is on ground if its bottom coordinate equals ground_y
+            return dino_coords[3] >= self.ground_y
+        except Exception as e:
+            print(f"Error checking ground: {e}")
+            return False
+            
     def jump(self, event=None):
         try:
             if not self.game_started or self.game_paused or self.game_over:
                 return
                 
-            if not self.is_jumping and not self.is_crouching:
+            # Only allow jumping if dinosaur is on ground and not crouching
+            if not self.is_jumping and not self.is_crouching and self.is_on_ground():
                 self.is_jumping = True
                 self.jump_count = 0
         except Exception as e:
@@ -764,7 +902,8 @@ class Game3:
             if not self.game_started or self.game_paused or self.game_over:
                 return
                 
-            if not self.is_jumping:
+            # Only allow crouching when on ground
+            if not self.is_jumping and self.is_on_ground():
                 self.is_crouching = True
                 # Make dinosaur shorter when crouching
                 self.canvas.coords(self.dino, 
@@ -802,16 +941,24 @@ class Game3:
                 
     def show_pause_screen(self):
         try:
-            self.pause_overlay = self.canvas.create_rectangle(200, 150, 600, 250, fill="white", outline="black", width=2)
-            self.pause_text = self.canvas.create_text(400, 200, text="GAME PAUSED", font=("Arial", 24, "bold"), fill="black")
+            # Create semi-transparent overlay - bring to front
+            self.pause_overlay = self.canvas.create_rectangle(0, 0, 800, 400, fill="black", stipple="gray50")
+            self.pause_text = self.canvas.create_text(400, 180, text="GAME PAUSED", font=("Arial", 24, "bold"), fill="white")
+            self.continue_text = self.canvas.create_text(400, 220, text="Press P or ESC to Continue", font=("Arial", 14), fill="yellow")
+            
+            # Bring pause screen to front
+            self.canvas.tag_raise(self.pause_overlay)
+            self.canvas.tag_raise(self.pause_text)
+            self.canvas.tag_raise(self.continue_text)
         except Exception as e:
             tkinter.messagebox.showerror("Error", f"Failed to show pause screen: {str(e)}")
             
     def hide_pause_screen(self):
         try:
-            if hasattr(self, 'pause_overlay'):
+            if (self, 'pause_overlay'):
                 self.canvas.delete(self.pause_overlay)
                 self.canvas.delete(self.pause_text)
+                self.canvas.delete(self.continue_text)
         except Exception as e:
             print(f"Error hiding pause screen: {e}")
             
@@ -822,27 +969,94 @@ class Game3:
         except Exception as e:
             print(f"Score update error: {e}")
             
+    def can_spawn_obstacle(self):
+        """Check if we can spawn a new obstacle based on spacing rules"""
+        try:
+            # If no obstacles exist, we can spawn one
+            if not self.obstacles:
+                return True
+            
+            # Get the position of the rightmost obstacle
+            rightmost_x = 0
+            for obstacle in self.obstacles:
+                coords = self.canvas.coords(obstacle["id"])
+                if coords[0] > rightmost_x:
+                    rightmost_x = coords[0]
+            
+            # Check if enough space has passed since the last obstacle
+            distance_since_last = 800 - rightmost_x
+            return distance_since_last >= self.min_obstacle_spacing
+            
+        except Exception as e:
+            print(f"Error checking obstacle spawn: {e}")
+            return False
+    
+    def get_next_spawn_position(self):
+        """Calculate the next spawn position with proper spacing"""
+        try:
+            if not self.obstacles:
+                return 800  # Start with first obstacle at the edge
+            
+            # Find the rightmost obstacle
+            rightmost_x = 0
+            for obstacle in self.obstacles:
+                coords = self.canvas.coords(obstacle["id"])
+                if coords[0] > rightmost_x:
+                    rightmost_x = coords[0]
+            
+            # Calculate spacing (random within range)
+            spacing = random.randint(self.min_obstacle_spacing, self.max_obstacle_spacing)
+            return rightmost_x + spacing
+            
+        except Exception as e:
+            print(f"Error calculating spawn position: {e}")
+            return 800
+    
     def create_obstacle(self):
         try:
+            # Check if we can spawn a new obstacle
+            if not self.can_spawn_obstacle():
+                return
+                
             obstacle_types = [
-                {"width": 20, "height": 40, "y": self.ground_y - 40, "color": "red"},
-                {"width": 40, "height": 20, "y": self.ground_y - 20, "color": "brown"},
-                {"width": 60, "height": 30, "y": self.ground_y - 30, "color": "darkred"}
+                {"width": 20, "height": 40, "y": self.ground_y , "color": "darkgreen", "type": "cactus"},
+                {"width": 140, "height": 120, "y": self.ground_y - 20, "color": "brown", "type": "boulder"},
             ]
             
             obstacle_type = random.choice(obstacle_types)
-            obstacle = self.canvas.create_rectangle(
-                800, obstacle_type["y"] - obstacle_type["height"],
-                800 + obstacle_type["width"], obstacle_type["y"],
-                fill=obstacle_type["color"], outline="black"
-            )
+            
+            # Get the spawn position with proper spacing
+            spawn_x = self.get_next_spawn_position()
+            
+            if obstacle_type["type"] == "cactus":
+                # Draw a cactus
+                obstacle = self.canvas.create_rectangle(
+                    spawn_x, obstacle_type["y"] - obstacle_type["height"],
+                    spawn_x + obstacle_type["width"], obstacle_type["y"],
+                    fill=obstacle_type["color"], outline="darkgreen"
+                )
+            elif obstacle_type["type"] in ["boulder"]:
+                # Draw rock (oval shape)
+                obstacle = self.canvas.create_oval(
+                    spawn_x, obstacle_type["y"] - obstacle_type["height"],
+                    spawn_x + obstacle_type["width"], obstacle_type["y"],
+                    fill=obstacle_type["color"], outline="black"
+                )
             
             self.obstacles.append({
                 "id": obstacle,
                 "width": obstacle_type["width"],
                 "height": obstacle_type["height"],
-                "y": obstacle_type["y"]
+                "y": obstacle_type["y"],
+                "type": obstacle_type["type"]
             })
+            
+            # Update last obstacle position
+            self.last_obstacle_x = spawn_x
+            
+            # Ensure obstacle is in front of dinosaur
+            self.canvas.tag_raise(obstacle)
+            
         except Exception as e:
             print(f"Error creating obstacle: {e}")
         
@@ -885,9 +1099,17 @@ class Game3:
                     self.jump_count += 1
                 else:
                     self.is_jumping = False
-            elif self.canvas.coords(self.dino)[3] < self.ground_y:
-                # Apply gravity
+            elif not self.is_on_ground():
+                # Apply gravity only when not on ground
                 self.canvas.move(self.dino, 0, self.gravity)
+                
+                # Snap to ground when landing
+                dino_coords = self.canvas.coords(self.dino)
+                if dino_coords[3] > self.ground_y:
+                    # Calculate how much we overshot the ground
+                    overshoot = dino_coords[3] - self.ground_y
+                    # Move dinosaur up by the overshoot amount to snap to ground
+                    self.canvas.move(self.dino, 0, -overshoot)
         except Exception as e:
             print(f"Jump handling error: {e}")
             
@@ -896,15 +1118,21 @@ class Game3:
             if self.game_paused or self.game_over or not self.game_started:
                 return
                 
+            # Move background (creates parallax effect)
+                
             # Handle jumping
             self.handle_jump()
             
             # Move obstacles
             self.move_obstacles()
             
-            # Create new obstacles randomly
-            if random.random() < 0.02 and len(self.obstacles) < 3:
+            # Create new obstacles with controlled spacing
+            self.obstacle_spawn_timer += 1
+            if (self.obstacle_spawn_timer >= 20 and  # Check every ~600ms (20 frames * 30ms)
+                len(self.obstacles) < 3 and 
+                random.random() < 0.3):  # 30% chance each check
                 self.create_obstacle()
+                self.obstacle_spawn_timer = 0
                 
             # Increase score
             self.score += 1
@@ -914,6 +1142,12 @@ class Game3:
             # Increase difficulty
             if self.score % 500 == 0:
                 self.obstacle_speed += 1
+                self.bg_speed += 0.5  # Also increase background speed
+                # Gradually decrease minimum spacing as game gets harder
+                if self.min_obstacle_spacing > 200:
+                    self.min_obstacle_spacing -= 10
+                if self.max_obstacle_spacing > 400:
+                    self.max_obstacle_spacing -= 10
                 
             # Check collisions
             if self.check_collisions():
@@ -932,11 +1166,21 @@ class Game3:
             if self.is_crouching:
                 self.stand_up()
                 
-            self.canvas.create_rectangle(200, 150, 600, 300, fill="white", outline="red", width=3)
-            self.canvas.create_text(400, 180, text="GAME OVER", font=("Arial", 28, "bold"), fill="red")
-            self.canvas.create_text(400, 220, text=f"Final Score: {self.score}", font=("Arial", 20), fill="black")
-            self.canvas.create_text(400, 250, text=f"High Score: {self.high_score}", font=("Arial", 20), fill="black")
-            self.canvas.create_text(400, 280, text="Press R to Restart", font=("Arial", 16), fill="blue")
+            # Create semi-transparent overlay
+            overlay = self.canvas.create_rectangle(0, 0, 800, 400, fill="black", stipple="gray50")
+            game_over_box = self.canvas.create_rectangle(150, 120, 650, 280, fill="white", outline="red", width=3)
+            game_over_text = self.canvas.create_text(400, 150, text="GAME OVER", font=("Arial", 28, "bold"), fill="red")
+            score_text = self.canvas.create_text(400, 190, text=f"Final Score: {self.score}", font=("Arial", 20), fill="black")
+            high_score_text = self.canvas.create_text(400, 220, text=f"High Score: {self.high_score}", font=("Arial", 20), fill="black")
+            restart_text = self.canvas.create_text(400, 250, text="Press R to Restart", font=("Arial", 16), fill="blue")
+            
+            # Bring game over screen to front
+            self.canvas.tag_raise(overlay)
+            self.canvas.tag_raise(game_over_box)
+            self.canvas.tag_raise(game_over_text)
+            self.canvas.tag_raise(score_text)
+            self.canvas.tag_raise(high_score_text)
+            self.canvas.tag_raise(restart_text)
         except Exception as e:
             tkinter.messagebox.showerror("Error", f"Failed to show game over screen: {str(e)}")
         
@@ -949,11 +1193,16 @@ class Game3:
             self.is_crouching = False
             self.is_jumping = False
             self.obstacle_speed = self.game_speed
+            self.bg_speed = 2  # Reset background speed
+            # Reset obstacle spacing variables
+            self.min_obstacle_spacing = 300
+            self.max_obstacle_spacing = 600
+            self.last_obstacle_x = 800
+            self.obstacle_spawn_timer = 0
             self.obstacles = []
             self.show_start_screen()
         except Exception as e:
             tkinter.messagebox.showerror("Error", f"Failed to restart game: {str(e)}")
-
 
 class GameLauncher:
     def __init__(self):
